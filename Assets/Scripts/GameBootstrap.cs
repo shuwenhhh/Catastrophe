@@ -22,10 +22,26 @@ public sealed class GameBootstrap : MonoBehaviour
     {
         Instance = this;
         Application.targetFrameRate = 60;
+        CreateCoreServices();
         ClearTemplateScene();
         CreateRoom();
         CreateCat();
         CreateCameraAndLight();
+    }
+
+    private void CreateCoreServices()
+    {
+        if (FindAnyObjectByType<GameManager>() == null)
+            gameObject.AddComponent<GameManager>();
+
+        NoiseManager noiseManager = FindAnyObjectByType<NoiseManager>();
+        if (noiseManager == null)
+            noiseManager = gameObject.AddComponent<NoiseManager>();
+        // The design contract fixes the alert threshold at 70.
+        noiseManager.threshold = 70f;
+
+        if (FindAnyObjectByType<OwnerAlert>() == null)
+            gameObject.AddComponent<OwnerAlert>();
     }
 
     public void AddScore(int points, string itemName)
