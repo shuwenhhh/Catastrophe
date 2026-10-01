@@ -21,11 +21,26 @@ public sealed class GameBootstrap : MonoBehaviour
     {
         Instance = this;
         Application.targetFrameRate = 60;
-        EnsureCoreManagers();
+        CreateCoreServices();
         ClearTemplateScene();
         CreateRoom();
         CreateCat();
         CreateCameraAndLight();
+    }
+
+    private void CreateCoreServices()
+    {
+        if (FindAnyObjectByType<GameManager>() == null)
+            gameObject.AddComponent<GameManager>();
+
+        NoiseManager noiseManager = FindAnyObjectByType<NoiseManager>();
+        if (noiseManager == null)
+            noiseManager = gameObject.AddComponent<NoiseManager>();
+        // The design contract fixes the alert threshold at 70.
+        noiseManager.threshold = 70f;
+
+        if (FindAnyObjectByType<OwnerAlert>() == null)
+            gameObject.AddComponent<OwnerAlert>();
     }
 
     public void AddScore(int points, string itemName)
@@ -39,14 +54,6 @@ public sealed class GameBootstrap : MonoBehaviour
         toast = $"{itemName} crashed!  +{points}";
         StopAllCoroutines();
         StartCoroutine(ClearToast());
-    }
-
-    private void EnsureCoreManagers()
-    {
-        if (GameManager.I == null)
-            gameObject.AddComponent<GameManager>();
-        if (NoiseManager.I == null)
-            gameObject.AddComponent<NoiseManager>();
     }
 
     private IEnumerator ClearToast()
