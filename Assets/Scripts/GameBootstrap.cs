@@ -5,7 +5,6 @@ public sealed class GameBootstrap : MonoBehaviour
 {
     public static GameBootstrap Instance { get; private set; }
 
-    private int score;
     private string toast = "FIRST TARGET: push the iPad off the table  •  WASD move  •  SPACE jump  •  E right-paw push";
     private GUIStyle titleStyle;
     private GUIStyle scoreStyle;
@@ -22,6 +21,7 @@ public sealed class GameBootstrap : MonoBehaviour
     {
         Instance = this;
         Application.targetFrameRate = 60;
+        EnsureCoreManagers();
         ClearTemplateScene();
         CreateRoom();
         CreateCat();
@@ -30,10 +30,23 @@ public sealed class GameBootstrap : MonoBehaviour
 
     public void AddScore(int points, string itemName)
     {
-        score += points;
+        GameManager.I?.AddChaos(points);
+        ShowChaosToast(points, itemName);
+    }
+
+    public void ShowChaosToast(int points, string itemName)
+    {
         toast = $"{itemName} crashed!  +{points}";
         StopAllCoroutines();
         StartCoroutine(ClearToast());
+    }
+
+    private void EnsureCoreManagers()
+    {
+        if (GameManager.I == null)
+            gameObject.AddComponent<GameManager>();
+        if (NoiseManager.I == null)
+            gameObject.AddComponent<NoiseManager>();
     }
 
     private IEnumerator ClearToast()
@@ -249,6 +262,7 @@ public sealed class GameBootstrap : MonoBehaviour
         toastStyle ??= new GUIStyle(titleStyle) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
 
         GUI.Label(new Rect(36f, 30f, 500f, 48f), "CATASTROPHE!", titleStyle);
+        int score = GameManager.I != null ? GameManager.I.chaosScore : 0;
         GUI.Label(new Rect(36f, 76f, 420f, 38f), $"CHAOS SCORE  {score}", scoreStyle);
         GUI.Label(new Rect(0f, logicalHeight - 76f, logicalWidth, 44f), toast, toastStyle);
     }

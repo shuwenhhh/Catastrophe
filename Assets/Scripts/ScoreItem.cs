@@ -2,17 +2,75 @@ using UnityEngine;
 
 public sealed class ScoreItem : MonoBehaviour
 {
-    public int Points { get; set; }
-    public string DisplayName { get; set; }
+    [SerializeField] private int points;
+    [SerializeField] private string displayName;
+    [SerializeField] private float noise = 30f;
 
-    private bool scored;
-
-    private void Update()
+    public int Points
     {
-        if (scored || transform.position.y > 0.22f)
+        get => points;
+        set
+        {
+            points = value;
+            Valuable valuable = GetComponent<Valuable>();
+            if (valuable != null)
+                valuable.chaosValue = value;
+        }
+    }
+
+    public string DisplayName
+    {
+        get => displayName;
+        set
+        {
+            displayName = value;
+            Valuable valuable = GetComponent<Valuable>();
+            if (valuable != null)
+                valuable.itemName = value;
+        }
+    }
+
+    private void Awake()
+    {
+        ApplyDefaultsForExistingScene();
+
+        Valuable valuable = GetComponent<Valuable>();
+        if (valuable == null)
+            valuable = gameObject.AddComponent<Valuable>();
+
+        valuable.itemName = displayName;
+        valuable.chaosValue = points;
+        valuable.noise = noise;
+        valuable.fragile = true;
+        valuable.OnDestroyed += HandleDestroyed;
+    }
+
+    private void OnDestroy()
+    {
+        Valuable valuable = GetComponent<Valuable>();
+        if (valuable != null)
+            valuable.OnDestroyed -= HandleDestroyed;
+    }
+
+    private void HandleDestroyed(Valuable valuable)
+    {
+        GameBootstrap.Instance?.ShowChaosToast(valuable.chaosValue, valuable.itemName);
+    }
+
+    private void ApplyDefaultsForExistingScene()
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+            displayName = gameObject.name;
+
+        if (points > 0)
             return;
 
-        scored = true;
-        GameBootstrap.Instance?.AddScore(Points, DisplayName);
+        points = displayName switch
+        {
+            "Cup" or "Coffee Mug" => 20,
+            "iPad" => 80,
+            "MacBook" => 80,
+            _ => 10
+        };
     }
 }
