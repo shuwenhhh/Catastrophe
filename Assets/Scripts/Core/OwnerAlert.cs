@@ -118,7 +118,7 @@ public sealed class OwnerAlert : MonoBehaviour
 
         GUI.Box(new Rect(logicalWidth * 0.5f - 260f, logicalHeight * 0.5f - 80f, 520f, 160f), GUIContent.none);
         GUI.Label(new Rect(0f, logicalHeight * 0.5f - 62f, logicalWidth, 58f),
-            "主人来了！快躲起来！", warningStyle);
+            "主人正在找你！", warningStyle);
         GUI.Label(new Rect(0f, logicalHeight * 0.5f + 4f, logicalWidth, 48f),
             $"{Mathf.CeilToInt(secondsRemaining)}", countdownStyle);
     }

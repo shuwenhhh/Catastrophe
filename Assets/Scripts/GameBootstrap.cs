@@ -5,7 +5,7 @@ public sealed class GameBootstrap : MonoBehaviour
 {
     public static GameBootstrap Instance { get; private set; }
 
-    private string toast = "FIRST TARGET: push the iPad off the table  •  WASD move  •  SPACE jump  •  E right-paw push";
+    private string toast = "WASD move  •  SPACE jump  •  E push / hide";
     private GUIStyle titleStyle;
     private GUIStyle scoreStyle;
     private GUIStyle toastStyle;
@@ -24,6 +24,7 @@ public sealed class GameBootstrap : MonoBehaviour
         CreateCoreServices();
         ClearTemplateScene();
         CreateRoom();
+        EnsureObjectiveProps();
         CreateCat();
         CreateHideSpots();
         CreateCameraAndLight();
@@ -135,6 +136,41 @@ public sealed class GameBootstrap : MonoBehaviour
             new Vector3(0.56f, 0.72f, 0.13f), new Color(0.90f, 0.65f, 0.13f), 70);
         CreateItem("Plant Pot", PrimitiveType.Cylinder, new Vector3(2.65f, 1.42f, 2.1f),
             new Vector3(0.46f, 0.62f, 0.46f), new Color(0.30f, 0.60f, 0.25f), 60);
+    }
+
+    private static void EnsureObjectiveProps()
+    {
+        ScoreItem[] scoreItems = FindObjectsByType<ScoreItem>(FindObjectsInactive.Include);
+        ScoreItem firstCup = null;
+        int cupCount = 0;
+        bool hasFragileProp = false;
+        foreach (ScoreItem item in scoreItems)
+        {
+            string itemName = item.gameObject.name;
+            if (itemName.Contains("Cup", System.StringComparison.OrdinalIgnoreCase) ||
+                itemName.Contains("Mug", System.StringComparison.OrdinalIgnoreCase))
+            {
+                cupCount++;
+                firstCup ??= item;
+            }
+
+            if (itemName.Contains("Vase", System.StringComparison.OrdinalIgnoreCase))
+                hasFragileProp = true;
+        }
+
+        if (cupCount < 2 && firstCup != null)
+        {
+            GameObject secondCup = Instantiate(firstCup.gameObject, firstCup.transform.parent);
+            secondCup.name = "Cup 2";
+            secondCup.transform.localPosition = firstCup.transform.localPosition + new Vector3(-0.48f, 0f, 0.12f);
+        }
+
+        if (!hasFragileProp && firstCup != null)
+        {
+            Vector3 vasePosition = firstCup.transform.position + new Vector3(-0.9f, 0.12f, 0.1f);
+            CreateItem("Pink Vase", PrimitiveType.Cylinder, vasePosition,
+                new Vector3(0.32f, 0.55f, 0.32f), new Color(0.96f, 0.38f, 0.55f), 35);
+        }
     }
 
     private void CreateCat()
@@ -305,6 +341,6 @@ public sealed class GameBootstrap : MonoBehaviour
         GUI.Label(new Rect(36f, 30f, 500f, 48f), "CATASTROPHE!", titleStyle);
         int score = GameManager.I != null ? GameManager.I.chaosScore : 0;
         GUI.Label(new Rect(36f, 76f, 420f, 38f), $"CHAOS SCORE  {score}", scoreStyle);
-        GUI.Label(new Rect(0f, logicalHeight - 76f, logicalWidth, 44f), toast, toastStyle);
+        GUI.Label(new Rect(0f, logicalHeight - 132f, logicalWidth, 38f), toast, toastStyle);
     }
 }

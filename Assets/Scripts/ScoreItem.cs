@@ -41,7 +41,7 @@ public sealed class ScoreItem : MonoBehaviour
         valuable.itemName = displayName;
         valuable.chaosValue = points;
         valuable.noise = noise;
-        valuable.fragile = true;
+        valuable.fragile = IsFragile(displayName);
         valuable.OnDestroyed += HandleDestroyed;
     }
 
@@ -65,12 +65,13 @@ public sealed class ScoreItem : MonoBehaviour
         if (points > 0)
             return;
 
-        points = displayName switch
-        {
-            "Cup" or "Coffee Mug" => 20,
-            "iPad" => 80,
-            "MacBook" => 80,
-            _ => 10
-        };
+        points = IsFragile(displayName) ? 35 : 10;
+    }
+
+    private static bool IsFragile(string itemName)
+    {
+        return itemName.Contains("Cup", System.StringComparison.OrdinalIgnoreCase) ||
+               itemName.Contains("Mug", System.StringComparison.OrdinalIgnoreCase) ||
+               itemName.Contains("Vase", System.StringComparison.OrdinalIgnoreCase);
     }
 }
