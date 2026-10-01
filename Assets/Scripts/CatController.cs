@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
-public sealed class CatController : MonoBehaviour
+public sealed partial class CatController : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 1.15f;
     [SerializeField] private float jumpHeight = 1.05f;
@@ -34,6 +34,21 @@ public sealed class CatController : MonoBehaviour
     private float lastJumpPressedAt = float.NegativeInfinity;
     private int currentVisualState;
     private bool isMovingVisual;
+    private GameObject activeHideSpot;
+
+    public bool IsHidden { get; private set; }
+
+    public void EnterHide(GameObject hideSpot)
+    {
+        activeHideSpot = hideSpot;
+        IsHidden = activeHideSpot != null;
+    }
+
+    public void ExitHide()
+    {
+        activeHideSpot = null;
+        IsHidden = false;
+    }
 
     private void Awake()
     {
