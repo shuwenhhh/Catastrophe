@@ -25,6 +25,7 @@ public sealed class GameBootstrap : MonoBehaviour
         ClearTemplateScene();
         CreateRoom();
         CreateCat();
+        CreateHideSpots();
         CreateCameraAndLight();
     }
 
@@ -159,6 +160,39 @@ public sealed class GameBootstrap : MonoBehaviour
         // the Animator and SpriteRenderer immediately.
         cat.AddComponent<CatController>();
         cat.AddComponent<CatContactShadow>();
+    }
+
+    private static void CreateHideSpots()
+    {
+        CreateHideSpot("Hide Spot - Cardboard Box", "纸箱", new Vector3(-5.1f, 0.35f, -2.4f),
+            new Vector3(1.15f, 0.7f, 1.15f), new Color(0.55f, 0.32f, 0.13f, 0.72f));
+        CreateHideSpot("Hide Spot - Under Sofa", "沙发底", new Vector3(3.9f, 0.22f, -2.25f),
+            new Vector3(2.4f, 0.44f, 1.05f), new Color(0.34f, 0.22f, 0.16f, 0.32f));
+        CreateHideSpot("Hide Spot - Behind Curtain", "窗帘后", new Vector3(-6.25f, 1.15f, 4.55f),
+            new Vector3(0.65f, 2.3f, 1.45f), new Color(0.72f, 0.32f, 0.38f, 0.32f));
+    }
+
+    private static void CreateHideSpot(string objectName, string displayName, Vector3 position,
+        Vector3 scale, Color color)
+    {
+        if (GameObject.Find(objectName) != null)
+            return;
+
+        GameObject spot = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        spot.name = objectName;
+        spot.transform.position = position;
+        spot.transform.localScale = scale;
+        SetColor(spot, color);
+        Renderer renderer = spot.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.material.SetFloat("_Surface", 1f);
+            renderer.material.color = color;
+        }
+
+        spot.GetComponent<BoxCollider>().isTrigger = true;
+        HideSpot hideSpot = spot.AddComponent<HideSpot>();
+        hideSpot.Configure(displayName);
     }
 
     private static void CreateCatPart(Transform parent, string name, PrimitiveType type, Vector3 localPosition,

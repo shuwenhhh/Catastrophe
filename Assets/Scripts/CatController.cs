@@ -35,19 +35,56 @@ public sealed partial class CatController : MonoBehaviour
     private int currentVisualState;
     private bool isMovingVisual;
     private GameObject activeHideSpot;
+    private HideSpot nearbyHideSpot;
+    private RigidbodyConstraints movementConstraints;
 
     public bool IsHidden { get; private set; }
 
     public void EnterHide(GameObject hideSpot)
     {
+        if (hideSpot == null || IsHidden)
+            return;
+
         activeHideSpot = hideSpot;
-        IsHidden = activeHideSpot != null;
+        IsHidden = true;
+        movementConstraints = body.constraints;
+        body.linearVelocity = Vector3.zero;
+        body.constraints = RigidbodyConstraints.FreezeAll;
+        SetHiddenVisual(true);
     }
 
     public void ExitHide()
     {
+        if (!IsHidden)
+            return;
+
         activeHideSpot = null;
         IsHidden = false;
+        body.constraints = movementConstraints;
+        SetHiddenVisual(false);
+    }
+
+    public void SetNearbyHideSpot(HideSpot hideSpot)
+    {
+        nearbyHideSpot = hideSpot;
+    }
+
+    public void ClearNearbyHideSpot(HideSpot hideSpot)
+    {
+        if (nearbyHideSpot == hideSpot)
+            nearbyHideSpot = null;
+    }
+
+    private void SetHiddenVisual(bool hidden)
+    {
+        if (spriteRenderer == null)
+            CacheVisualComponents();
+        if (spriteRenderer == null)
+            return;
+
+        Color color = spriteRenderer.color;
+        color.a = hidden ? 0.32f : 1f;
+        spriteRenderer.color = color;
     }
 
     private void Awake()
@@ -82,8 +119,20 @@ public sealed partial class CatController : MonoBehaviour
         moveDirection = CameraRelativeDirection(moveInput);
         if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
             lastJumpPressedAt = Time.time;
-        pushRequested |= Keyboard.current != null &&
-                         (Keyboard.current.eKey.wasPressedThisFrame || Keyboard.current.fKey.wasPressedThisFrame);
+        bool interactionPressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
+        if (interactionPressed && IsHidden)
+            ExitHide();
+        else if (interactionPressed && nearbyHideSpot != null)
+            EnterHide(nearbyHideSpot.gameObject);
+        else
+            pushRequested |= Keyboard.current != null &&
+                             (interactionPressed || Keyboard.current.fKey.wasPressedThisFrame);
+
+        if (IsHidden)
+        {
+            moveInput = Vector2.zero;
+            moveDirection = Vector3.zero;
+        }
 
         if (animator != null)
         {
