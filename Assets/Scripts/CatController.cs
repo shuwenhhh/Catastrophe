@@ -6,7 +6,9 @@ using UnityEngine.InputSystem;
 public sealed partial class CatController : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 1.15f;
-    [SerializeField] private float jumpHeight = 1.05f;
+    // Stair-step jump design (v3.15): ~0.58 m clears chair seats (0.45 m) but
+    // not the dining table (0.75 m). Table route is floor -> chair -> table.
+    [SerializeField] private float jumpHeight = 0.58f;
     [SerializeField] private float coyoteTime = 0.12f;
     [SerializeField] private float jumpBufferTime = 0.15f;
     [SerializeField] private float fallGravityMultiplier = 2.1f;
@@ -244,8 +246,8 @@ public sealed partial class CatController : MonoBehaviour
             body.linearVelocity = velocity;
         }
 
-        // A faster descent feels responsive while preserving enough ascent to
-        // clear the chair and dining-table tops.
+        // A faster descent feels responsive. Ascent clears chair seats; the
+        // dining table needs the chair stepping stone (stair-step jump design).
         if (body.linearVelocity.y < 0f)
             body.AddForce(Physics.gravity * (fallGravityMultiplier - 1f), ForceMode.Acceleration);
 

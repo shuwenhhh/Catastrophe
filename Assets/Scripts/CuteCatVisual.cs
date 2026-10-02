@@ -22,6 +22,8 @@ public sealed class CuteCatVisual : MonoBehaviour
     private Transform[] lowerLegs;
     private Transform[] tailBones;
     private Transform[] earBones;
+    private Quaternion[] tailBaseRotations;
+    private Quaternion[] earBaseRotations;
     private Vector3 visualBaseScale;
     private Vector3 headBaseScale;
     private Vector3[] legBaseScales;
@@ -46,6 +48,14 @@ public sealed class CuteCatVisual : MonoBehaviour
         lowerLegs = FindMany("Front_R_Lower", "Front_L_Lower", "Back_R_Lower", "Back_L_Lower");
         tailBones = FindMany("Tail_01", "Tail_02", "Tail_03");
         earBones = FindNameContains("Ear");
+        // Snapshot base rotations once: LateUpdate composes offsets from these
+        // instead of multiplying every frame (which accumulates drift).
+        tailBaseRotations = new Quaternion[tailBones.Length];
+        for (int index = 0; index < tailBones.Length; index++)
+            tailBaseRotations[index] = tailBones[index].localRotation;
+        earBaseRotations = new Quaternion[earBones.Length];
+        for (int index = 0; index < earBones.Length; index++)
+            earBaseRotations[index] = earBones[index].localRotation;
         if (head != null)
         {
             headBaseScale = head.localScale;
@@ -127,7 +137,8 @@ public sealed class CuteCatVisual : MonoBehaviour
         float idleAmount = GetComponent<Rigidbody>().linearVelocity.sqrMagnitude < 0.02f ? 1f : 0.35f;
         float sway = Mathf.Sin(Time.time * 2.4f) * tailSwayDegrees * idleAmount;
         for (int index = 0; index < tailBones.Length; index++)
-            tailBones[index].localRotation *= Quaternion.Euler(0f, sway * (0.45f + index * 0.25f), 0f);
+            tailBones[index].localRotation = tailBaseRotations[index] *
+                Quaternion.Euler(0f, sway * (0.45f + index * 0.25f), 0f);
 
         if (Time.time >= nextEarTwitchAt)
         {
@@ -137,8 +148,14 @@ public sealed class CuteCatVisual : MonoBehaviour
         if (Time.time < earTwitchUntil)
         {
             float twitch = Mathf.Sin((earTwitchUntil - Time.time) * 65f) * 6f;
-            foreach (Transform ear in earBones)
-                ear.localRotation *= Quaternion.Euler(0f, 0f, twitch);
+            for (int index = 0; index < earBones.Length; index++)
+                earBones[index].localRotation = earBaseRotations[index] *
+                    Quaternion.Euler(0f, 0f, twitch);
+        }
+        else
+        {
+            for (int index = 0; index < earBones.Length; index++)
+                earBones[index].localRotation = earBaseRotations[index];
         }
 
         if (Time.time >= nextBlinkAt)
