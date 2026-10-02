@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -7,6 +8,27 @@ public sealed class GameManager : MonoBehaviour
     public static GameManager I;
 
     public int chaosScore = 0;
+    public bool IsFailed { get; private set; }
+    public float ElapsedTime => runElapsed;
+    public string Grade => ElapsedTime < 90f ? "S" : ElapsedTime < 180f ? "A" : "B";
+    public int HighScore => PlayerPrefs.GetInt("Catastrophe.HighScore", 0);
+
+    public readonly struct ChaosEntry
+    {
+        public readonly string itemName;
+        public readonly int points;
+
+        public ChaosEntry(string itemName, int points)
+        {
+            this.itemName = itemName;
+            this.points = points;
+        }
+    }
+
+    private readonly List<ChaosEntry> receipt = new List<ChaosEntry>();
+    private float runElapsed;
+    private bool runStarted;
+    public IReadOnlyList<ChaosEntry> Receipt => receipt;
 
     public event Action<int> OnChaosChanged;
     public event Action OnLevelCompleted;
@@ -25,22 +47,52 @@ public sealed class GameManager : MonoBehaviour
 
     public void AddChaos(int basePoints)
     {
+        AddChaos(basePoints, "Chaos");
+    }
+
+    public void BeginRun()
+    {
+        runElapsed = 0f;
+        runStarted = true;
+    }
+
+    private void Update()
+    {
+        if (runStarted && GameFlowUI.GameplayInputEnabled)
+            runElapsed += Time.deltaTime;
+    }
+
+    public void AddChaos(int basePoints, string itemName)
+    {
         if (basePoints <= 0)
             return;
 
         chaosScore += basePoints;
+        receipt.Add(new ChaosEntry(string.IsNullOrWhiteSpace(itemName) ? "Item" : itemName, basePoints));
         OnChaosChanged?.Invoke(chaosScore);
     }
 
     public void OnCaught()
     {
+        if (IsFailed)
+            return;
+
+        IsFailed = true;
+        SaveHighScore();
         OnLevelFailed();
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void OnLevelComplete()
     {
+        SaveHighScore();
         OnLevelCompleted?.Invoke();
+    }
+
+    private void SaveHighScore()
+    {
+        if (chaosScore <= HighScore) return;
+        PlayerPrefs.SetInt("Catastrophe.HighScore", chaosScore);
+        PlayerPrefs.Save();
     }
 
     public void OnLevelFailed()

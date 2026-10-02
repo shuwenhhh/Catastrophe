@@ -10,16 +10,18 @@ public sealed partial class CatController : MonoBehaviour
     [SerializeField] private float coyoteTime = 0.12f;
     [SerializeField] private float jumpBufferTime = 0.15f;
     [SerializeField] private float fallGravityMultiplier = 2.1f;
-    [SerializeField] private float pushForce = 4.5f;
+    [SerializeField] private float basePush = 0.70f;
     [SerializeField] private float pushReach = 0.65f;
     [SerializeField] private float frontVisualScale = 0.75f;
     [SerializeField] private float backVisualScale = 0.74f;
     [SerializeField] private float pushVisualScale = 0.67f;
     [SerializeField] private float groundedFootLocalY = -0.225f;
+    [SerializeField] private float footstepDistance = 0.40f;
 
     private Rigidbody body;
     private Animator animator;
     private SpriteRenderer spriteRenderer;
+    private CuteCatVisual cuteVisual;
     private Vector3 baseSpriteScale;
     private Vector3 baseSpriteLocalPosition;
     private bool hasBaseSpriteTransform;
@@ -37,6 +39,8 @@ public sealed partial class CatController : MonoBehaviour
     private GameObject activeHideSpot;
     private HideSpot nearbyHideSpot;
     private RigidbodyConstraints movementConstraints;
+    private Vector3 lastFootstepPosition;
+    private float footstepDistanceTravelled;
 
     public bool IsHidden { get; private set; }
 
@@ -90,6 +94,7 @@ public sealed partial class CatController : MonoBehaviour
     private void Awake()
     {
         body = GetComponent<Rigidbody>();
+        lastFootstepPosition = transform.position;
     }
 
     private void Start()
@@ -101,6 +106,7 @@ public sealed partial class CatController : MonoBehaviour
     {
         animator = GetComponentInChildren<Animator>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        cuteVisual = GetComponent<CuteCatVisual>();
         if (spriteRenderer != null && !hasBaseSpriteTransform)
         {
             baseSpriteScale = spriteRenderer.transform.localScale;
@@ -112,7 +118,12 @@ public sealed partial class CatController : MonoBehaviour
 
     private void Update()
     {
-        if (animator == null || spriteRenderer == null)
+        if (!GameFlowUI.GameplayInputEnabled)
+        {
+            moveInput = Vector2.zero;
+            return;
+        }
+        if (animator == null || (spriteRenderer == null && cuteVisual == null))
             CacheVisualComponents();
 
         moveInput = ReadMovement();
@@ -143,8 +154,11 @@ public sealed partial class CatController : MonoBehaviour
                 : 0f;
             animator.SetFloat("Speed", normalizedSpeed, 0.1f, Time.deltaTime);
             UpdateVisualDirection();
-            animator.SetFloat("DirectionX", visualDirection.x);
-            animator.SetFloat("DirectionY", visualDirection.y);
+            if (spriteRenderer != null)
+            {
+                animator.SetFloat("DirectionX", visualDirection.x);
+                animator.SetFloat("DirectionY", visualDirection.y);
+            }
             bool isGrounded = IsGrounded();
             animator.SetBool("Grounded", isGrounded);
             if (isJumping)
@@ -155,6 +169,8 @@ public sealed partial class CatController : MonoBehaviour
                 {
                     isJumping = false;
                     currentVisualState = 0;
+                    AudioManager.I?.PlayLanding();
+                    cuteVisual?.PlayLandingSquash();
                 }
             }
 
@@ -165,7 +181,8 @@ public sealed partial class CatController : MonoBehaviour
             // physics tick can leave the last walk sprite (often a raised paw)
             // visible after the player has already released the key.
             isMovingVisual = moveInput.sqrMagnitude > 0.02f;
-            UpdateAnimationState(isMovingVisual);
+            if (spriteRenderer != null)
+                UpdateAnimationState(isMovingVisual);
         }
 
         if (pushRequested && !isPushing)
@@ -204,12 +221,20 @@ public sealed partial class CatController : MonoBehaviour
         velocity.z = moveDirection.z * moveSpeed;
         body.linearVelocity = velocity;
 
+        UpdateFootsteps(grounded);
+
         bool bufferedJump = Time.time - lastJumpPressedAt <= jumpBufferTime;
         bool canUseGround = Time.time - lastGroundedAt <= coyoteTime;
         if (bufferedJump && canUseGround && !isJumping)
         {
             if (animator != null)
-                PlayDirectionalState("Jump", true);
+            {
+                if (spriteRenderer != null)
+                    PlayDirectionalState("Jump", true);
+                else
+                    animator.SetTrigger("Jump");
+            }
+            cuteVisual?.PlayJumpStretch();
             isJumping = true;
             jumpStartedAt = Time.time;
             lastJumpPressedAt = float.NegativeInfinity;
@@ -229,6 +254,29 @@ public sealed partial class CatController : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 0.22f);
         }
+    }
+
+    private void UpdateFootsteps(bool grounded)
+    {
+        Vector3 currentPosition = transform.position;
+        Vector3 travelled = currentPosition - lastFootstepPosition;
+        travelled.y = 0f;
+        lastFootstepPosition = currentPosition;
+
+        bool walking = grounded && !IsHidden && moveDirection.sqrMagnitude > 0.02f &&
+                       new Vector2(body.linearVelocity.x, body.linearVelocity.z).sqrMagnitude > 0.02f;
+        if (!walking)
+        {
+            footstepDistanceTravelled = 0f;
+            return;
+        }
+
+        footstepDistanceTravelled += travelled.magnitude;
+        if (footstepDistanceTravelled < footstepDistance)
+            return;
+
+        footstepDistanceTravelled %= Mathf.Max(0.05f, footstepDistance);
+        AudioManager.I?.PlayFootstep();
     }
 
     private void UpdateVisualDirection()
@@ -365,15 +413,20 @@ public sealed partial class CatController : MonoBehaviour
     private IEnumerator Push()
     {
         isPushing = true;
+        AudioManager.I?.PlayPawPush();
         if (animator != null)
         {
-            ApplyVisualScale(pushVisualScale);
-            int pushState = Animator.StringToHash("Base Layer.Push_Side");
-            // This controller is intentionally driven directly from code (its
-            // directional states have no transition graph). Play guarantees E
-            // enters the push state immediately; a trigger alone had no route.
-            animator.Play(pushState, 0, 0f);
-            currentVisualState = pushState;
+            if (spriteRenderer != null)
+            {
+                ApplyVisualScale(pushVisualScale);
+                int pushState = Animator.StringToHash("Base Layer.Push_Side");
+                animator.Play(pushState, 0, 0f);
+                currentVisualState = pushState;
+            }
+            else
+            {
+                animator.SetTrigger("Push");
+            }
         }
 
         yield return new WaitForSeconds(0.24f);
@@ -383,7 +436,14 @@ public sealed partial class CatController : MonoBehaviour
         {
             Rigidbody targetBody = hit.rigidbody;
             if (targetBody != null && targetBody != body)
-                targetBody.AddForce((transform.forward + Vector3.up * 0.12f) * pushForce, ForceMode.Impulse);
+            {
+                Vector3 pushDirection = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+                Valuable valuable = targetBody.GetComponent<Valuable>();
+                valuable?.ActivatePhysics();
+                float targetWeight = valuable != null ? Mathf.Clamp(valuable.weight, 1f, 3f) :
+                    Mathf.Clamp(targetBody.mass, 1f, 3f);
+                targetBody.AddForce(pushDirection * (basePush / targetWeight), ForceMode.Impulse);
+            }
         }
 
         yield return new WaitForSeconds(0.28f);

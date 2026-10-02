@@ -24,7 +24,7 @@ public sealed class NoiseManager : MonoBehaviour
 
     public void EmitNoise(float amount)
     {
-        if (amount <= 0f)
+        if (amount <= 0f || Time.timeScale <= 0f)
             return;
 
         float previousNoise = noise;

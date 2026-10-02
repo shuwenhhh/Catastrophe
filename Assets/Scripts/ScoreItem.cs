@@ -42,6 +42,8 @@ public sealed class ScoreItem : MonoBehaviour
         valuable.chaosValue = points;
         valuable.noise = noise;
         valuable.fragile = IsFragile(displayName);
+        valuable.weight = DefaultWeight(displayName);
+        valuable.ApplyPhysicsTuning();
         valuable.OnDestroyed += HandleDestroyed;
     }
 
@@ -54,7 +56,8 @@ public sealed class ScoreItem : MonoBehaviour
 
     private void HandleDestroyed(Valuable valuable)
     {
-        GameBootstrap.Instance?.ShowChaosToast(valuable.chaosValue, valuable.itemName);
+        if (GameBootstrap.Instance != null)
+            GameBootstrap.Instance.ShowChaosToast(valuable.chaosValue, valuable.itemName);
     }
 
     private void ApplyDefaultsForExistingScene()
@@ -73,5 +76,19 @@ public sealed class ScoreItem : MonoBehaviour
         return itemName.Contains("Cup", System.StringComparison.OrdinalIgnoreCase) ||
                itemName.Contains("Mug", System.StringComparison.OrdinalIgnoreCase) ||
                itemName.Contains("Vase", System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static float DefaultWeight(string itemName)
+    {
+        if (itemName.Contains("Vase", System.StringComparison.OrdinalIgnoreCase)) return 3f;
+        if (itemName.Contains("MacBook", System.StringComparison.OrdinalIgnoreCase)) return 2.6f;
+        if (itemName.Contains("Globe", System.StringComparison.OrdinalIgnoreCase) ||
+            itemName.Contains("Plant", System.StringComparison.OrdinalIgnoreCase) ||
+            itemName.Contains("Tea Pot", System.StringComparison.OrdinalIgnoreCase) ||
+            itemName.Contains("Lucky Cat", System.StringComparison.OrdinalIgnoreCase)) return 2.2f;
+        if (itemName.Contains("iPad", System.StringComparison.OrdinalIgnoreCase) ||
+            itemName.Contains("Camera", System.StringComparison.OrdinalIgnoreCase) ||
+            itemName.Contains("Frame", System.StringComparison.OrdinalIgnoreCase)) return 1.6f;
+        return 1f;
     }
 }

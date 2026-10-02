@@ -10,14 +10,14 @@ using UnityEngine;
 public static class CatSpriteAnimationSetup
 {
     private const string Folder = "Assets/Art/Cat";
-    private const string SideTexturePath = Folder + "/cat_walk.png";
-    private const string FrontTexturePath = Folder + "/cat_walk_front.png";
-    private const string BackTexturePath = Folder + "/cat_walk_back.png";
-    private const string PlushFolder = "Assets/Art/TuxedoKitten/GeneratedPlushSprites";
-    private const string SideJumpTexturePath = PlushFolder + "/Plush_Jump_Side_6Frames.png";
-    private const string FrontJumpTexturePath = PlushFolder + "/Plush_Jump_TowardCamera_6Frames.png";
-    private const string BackJumpTexturePath = PlushFolder + "/Plush_Jump_Away_Back_6Frames.png";
-    private const string PushTexturePath = PlushFolder + "/Plush_GentleLeftPawPush_4Frames.png";
+    private const string SmoothFolder = "Assets/Art/TuxedoKitten/GeneratedSmoothSprites";
+    private const string SideTexturePath = SmoothFolder + "/Smooth_Walk_Side_6Frames.png";
+    private const string FrontTexturePath = SmoothFolder + "/Smooth_Walk_TowardCamera_6Frames.png";
+    private const string BackTexturePath = SmoothFolder + "/Smooth_Walk_Away_Back_6Frames.png";
+    private const string SideJumpTexturePath = SmoothFolder + "/Smooth_Jump_Side_6Frames.png";
+    private const string FrontJumpTexturePath = SmoothFolder + "/Smooth_Jump_TowardCamera_6Frames.png";
+    private const string BackJumpTexturePath = SmoothFolder + "/Smooth_Jump_Away_Back_6Frames.png";
+    private const string PushTexturePath = SmoothFolder + "/Smooth_GentleLeftPawPush_4Frames.png";
     private const string IdleClipPath = Folder + "/Cat_Idle.anim";
     private const string WalkClipPath = Folder + "/Cat_Walk.anim";
     private const string FrontIdleClipPath = Folder + "/Cat_Idle_Front.anim";
@@ -33,7 +33,7 @@ public static class CatSpriteAnimationSetup
     private const string PrefabPath = PrefabFolder + "/CatSprite.prefab";
     private const int Columns = 6;
     private const int Rows = 1;
-    private const int WalkFrameWidth = 448;
+    private const int WalkFrameWidth = 362;
     private const int JumpFrameWidth = 362;
     private const int PushColumns = 4;
     private const int PushFrameWidth = 543;

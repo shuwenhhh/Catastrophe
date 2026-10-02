@@ -1,0 +1,193 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4086144314281149837
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 724709632031424538}
+  - component: {fileID: 690797213699281269}
+  - component: {fileID: 1868219876200323683}
+  - component: {fileID: 8877627786345248453}
+  - component: {fileID: 7971627072898112163}
+  m_Layer: 0
+  m_Name: Tripo_Tablet
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &724709632031424538
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4086144314281149837}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7941820020670553032}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &690797213699281269
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4086144314281149837}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.27003068, y: 0.014438691, z: 0.34167928}
+  m_Center: {x: 0, y: -0.000000004773028, z: -0.17000008}
+--- !u!54 &1868219876200323683
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4086144314281149837}
+  serializedVersion: 5
+  m_Mass: 1.2
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &8877627786345248453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4086144314281149837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92c9b85d343d0431ea2891e8eba8ebf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Valuable
+  itemName: Tablet
+  chaosValue: 35
+  weight: 1.2
+  noise: 22.75
+  fragile: 0
+  minimumFallDistance: 0.2
+  toppledAngle: 65
+  initialSettleTime: 1.25
+  maximumSpeed: 2
+  lockPhysicsUntilFirstPush: 1
+--- !u!114 &7971627072898112163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4086144314281149837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 090642daabfdd42e3a91ba891b432e1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScoreItem
+  points: 35
+  displayName: Tablet
+  noise: 30
+--- !u!1001 &7619450955676400675
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 724709632031424538}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0072193444
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.17000008
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7053751
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7053751
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.049457062
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.049457062
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -5073151978923834110, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f1049f0d07fda4103b81d4ed4ce8b48e, type: 2}
+    - target: {fileID: -5073151978923834110, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6a3f69f5c8aa64bcd9d0a4ba5b4b7c76, type: 2}
+    - target: {fileID: 919132149155446097, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+      propertyPath: m_Name
+      value: Mesh
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+--- !u!4 &7941820020670553032 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: e9190144178c14ceba229deb71fbe9a8, type: 3}
+  m_PrefabInstance: {fileID: 7619450955676400675}
+  m_PrefabAsset: {fileID: 0}

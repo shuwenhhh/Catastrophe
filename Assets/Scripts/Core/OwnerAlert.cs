@@ -10,7 +10,7 @@ public sealed class OwnerAlert : MonoBehaviour
     private float secondsRemaining;
     private GUIStyle warningStyle;
     private GUIStyle countdownStyle;
-    private GUIStyle noiseStyle;
+    private GUIStyle failureStyle;
 
     private void Start()
     {
@@ -56,7 +56,10 @@ public sealed class OwnerAlert : MonoBehaviour
     public void TriggerAlert()
     {
         if (alertRoutine == null)
+        {
+            AudioManager.I?.PlayOwnerAlert();
             alertRoutine = StartCoroutine(AlertCountdown());
+        }
     }
 
     private IEnumerator AlertCountdown()
@@ -74,6 +77,7 @@ public sealed class OwnerAlert : MonoBehaviour
             // Resetting to zero crosses below the threshold, so the very next
             // accumulation can trigger another alert. There is no cooldown.
             noiseManager?.ResetNoise();
+            AudioManager.I?.PlayHideSuccess();
             alertRoutine = null;
             yield break;
         }
@@ -84,18 +88,15 @@ public sealed class OwnerAlert : MonoBehaviour
 
     private void OnGUI()
     {
+        if (!GameFlowUI.GameplayInputEnabled)
+            return;
+
         float uiScale = Mathf.Clamp(Screen.height / 1080f, 1f, 2f);
+        Matrix4x4 previousMatrix = GUI.matrix;
         GUI.matrix = Matrix4x4.Scale(new Vector3(uiScale, uiScale, 1f));
         float logicalWidth = Screen.width / uiScale;
         float logicalHeight = Screen.height / uiScale;
 
-        noiseStyle ??= new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 22,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleRight,
-            normal = { textColor = Color.white }
-        };
         warningStyle ??= new GUIStyle(GUI.skin.label)
         {
             fontSize = 38,
@@ -109,17 +110,17 @@ public sealed class OwnerAlert : MonoBehaviour
             normal = { textColor = Color.white }
         };
 
-        float currentNoise = noiseManager != null ? noiseManager.noise : 0f;
-        GUI.Label(new Rect(logicalWidth - 300f, 30f, 264f, 42f),
-            $"噪音  {Mathf.RoundToInt(currentNoise)} / 100", noiseStyle);
-
         if (alertRoutine == null)
+        {
+            GUI.matrix = previousMatrix;
             return;
+        }
 
         GUI.Box(new Rect(logicalWidth * 0.5f - 260f, logicalHeight * 0.5f - 80f, 520f, 160f), GUIContent.none);
         GUI.Label(new Rect(0f, logicalHeight * 0.5f - 62f, logicalWidth, 58f),
             "主人正在找你！", warningStyle);
         GUI.Label(new Rect(0f, logicalHeight * 0.5f + 4f, logicalWidth, 48f),
             $"{Mathf.CeilToInt(secondsRemaining)}", countdownStyle);
+        GUI.matrix = previousMatrix;
     }
 }

@@ -68,6 +68,13 @@ public static class LivingRoomSceneSetup
 
         ConfigureWoodMaterials(floor, table, chair01, chair02, chair03);
 
+        // v3.4 art direction: serialize every shelf piece, prop and soft furnishing
+        // as an independent hierarchy object so artists can freely move or restyle it.
+        LivingRoomArtInstaller.BuildInRoom(room.transform);
+
+        // Lighting is installed after this scene save by its independent menu command.
+        // Keeping the rig outside "Living Room" means rebuilding art never deletes it.
+
         Selection.activeGameObject = room;
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);

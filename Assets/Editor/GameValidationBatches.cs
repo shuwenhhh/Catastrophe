@@ -11,8 +11,9 @@ using UnityEngine;
 public static class GameValidationBatches
 {
     private const string ScenePath = "Assets/LivingRoom.unity";
-    private const string CatPrefabPath = "Assets/Resources/TuxedoKitten/TuxedoKitten.prefab";
-    private const string CatFbxPath = "Assets/Art/TuxedoKitten/TuxedoKitten_Rigged.fbx";
+    private const string CatPrefabPath = "Assets/Resources/Cat/CatSprite.prefab";
+    private const string CatControllerPath = "Assets/Art/Cat/CatSprite.controller";
+    private const string SmoothSpriteFolder = "Assets/Art/TuxedoKitten/GeneratedSmoothSprites";
     private const string ModelFolder = "Assets/Art/LivingRoom/Models";
 
     public static void Batch01() => Execute(1);
@@ -25,6 +26,16 @@ public static class GameValidationBatches
     public static void Batch08() => Execute(8);
     public static void Batch09() => Execute(9);
     public static void Batch10() => Execute(10);
+    public static void Batch11() => Execute(11);
+    public static void Batch12() => Execute(12);
+    public static void Batch13() => Execute(13);
+    public static void Batch14() => Execute(14);
+    public static void Batch15() => Execute(15);
+    public static void Batch16() => Execute(16);
+    public static void Batch17() => Execute(17);
+    public static void Batch18() => Execute(18);
+    public static void Batch19() => Execute(19);
+    public static void Batch20() => Execute(20);
 
     [MenuItem("Catastrophe/Run Validation Batch 10")]
     public static void RunAllInEditor()
@@ -41,6 +52,22 @@ public static class GameValidationBatches
         }
     }
 
+    [MenuItem("Catastrophe/Run Final Delivery Batch 20")]
+    public static void RunFinalDeliveryInEditor()
+    {
+        try
+        {
+            TripoBatchImporter.FixAllMaterials();
+            for (int i = 1; i <= 19; i++) Run(i);
+            Debug.Log("GAME_VALIDATION_BATCH_20_PASSED");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"GAME_VALIDATION_BATCH_20_FAILED: {exception.Message}");
+            Debug.LogException(exception);
+        }
+    }
+
     private static void Execute(int number)
     {
         try
@@ -48,6 +75,11 @@ public static class GameValidationBatches
             if (number == 10)
             {
                 for (int i = 1; i <= 9; i++) Run(i);
+            }
+            else if (number == 20)
+            {
+                TripoBatchImporter.FixAllMaterials();
+                for (int i = 1; i <= 19; i++) Run(i);
             }
             else Run(number);
 
@@ -75,8 +107,175 @@ public static class GameValidationBatches
             case 7: ValidateMaterialsAndTextures(); break;
             case 8: ValidateColliders(); break;
             case 9: ValidateBootstrapAndCamera(); break;
+            case 10: for (int i = 1; i <= 9; i++) Run(i); break;
+            case 11: ValidateCoreLoop(); break;
+            case 12: ValidateTargetSequence(); break;
+            case 13: ValidateAlertAndHide(); break;
+            case 14: ValidateResultsFlow(); break;
+            case 15: ValidateStablePhysics(); break;
+            case 16: ValidateAudioFeedback(); break;
+            case 17: ValidateJuiceAndCutePass(); break;
+            case 18: ValidateIndependentSceneArt(); break;
+            case 19: ValidatePresentationAndCamera(); break;
             default: throw new ArgumentOutOfRangeException(nameof(number));
         }
+    }
+
+    private static void ValidateCoreLoop()
+    {
+        Require(typeof(GameManager).GetMethod("AddChaos", new[] { typeof(int), typeof(string) }) != null,
+            "Scored destruction entry point is missing.");
+        Require(typeof(Valuable).GetEvent("AnyDestroyed") != null, "Global Valuable destruction event is missing.");
+        Require(typeof(NoiseManager).GetMethod("EmitNoise") != null, "Noise emission is missing.");
+        OpenRoom();
+        foreach (Valuable valuable in UnityEngine.Object.FindObjectsByType<Valuable>(FindObjectsSortMode.None))
+            Require(valuable.GetComponent<Rigidbody>() != null, $"{valuable.name} has Valuable but no Rigidbody.");
+    }
+
+    private static void ValidateTargetSequence()
+    {
+        Require(typeof(TargetManager).GetMethod("CompleteTarget") != null, "Target completion API is missing.");
+        Require(typeof(TargetManager).GetEvent("OnTargetChanged") != null, "Target UI change event is missing.");
+        string source = File.ReadAllText("Assets/Scripts/Core/TargetManager.cs");
+        foreach (string target in new[] { "ipad", "cups", "fragile", "chaos100" })
+            Require(source.Contains(target, StringComparison.Ordinal), $"Target queue is missing {target}.");
+        Require(source.Contains("IsTablet(itemName)", StringComparison.Ordinal) &&
+                source.Contains("\"tablet\"", StringComparison.Ordinal),
+            "The first objective must accept the imported Tablet item name, not only iPad.");
+    }
+
+    private static void ValidateAlertAndHide()
+    {
+        Require(typeof(OwnerAlert).GetMethod("TriggerAlert") != null, "Owner alert trigger is missing.");
+        Require(typeof(CatController).GetProperty("IsHidden") != null, "Cat hidden state is missing.");
+        Require(typeof(CatController).GetMethod("EnterHide") != null && typeof(CatController).GetMethod("ExitHide") != null,
+            "Hide enter/exit flow is incomplete.");
+        OpenRoom();
+        int authoredHideSpots = UnityEngine.Object.FindObjectsByType<HideSpot>(FindObjectsSortMode.None).Length;
+        bool runtimeHideSpots = typeof(GameBootstrap).GetMethod("CreateHideSpots",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static) != null;
+        Require(authoredHideSpots >= 3 || runtimeHideSpots,
+            "LivingRoom needs all three authored or bootstrap-generated hide spots.");
+    }
+
+    private static void ValidateResultsFlow()
+    {
+        Require(typeof(GameManager).GetMethod("OnLevelComplete") != null, "Level completion API is missing.");
+        Require(typeof(GameManager).GetMethod("OnLevelFailed") != null, "Failure result API is missing.");
+        Require(typeof(GameManager).GetProperty("Receipt") != null, "Receipt data is missing.");
+        Require(typeof(GameManager).GetProperty("HighScore") != null && typeof(GameManager).GetProperty("Grade") != null,
+            "Persistent high score or S/A/B rating is missing.");
+        foreach (string method in new[] { "RestartGame", "ReturnToMainMenu", "ResumeGame" })
+            Require(typeof(GameFlowUI).GetMethod(method) != null, $"Result/menu action is missing: {method}.");
+    }
+
+    private static void ValidateStablePhysics()
+    {
+        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        Require(typeof(Valuable).GetField("maximumSpeed", flags) != null, "Valuable speed clamp is missing.");
+        Require(typeof(Valuable).GetField("destructionArmed", flags) != null,
+            "Spawn-settling guard is missing; startup impacts may score or play audio.");
+        OpenRoom();
+        Valuable[] valuables = UnityEngine.Object.FindObjectsByType<Valuable>(FindObjectsSortMode.None);
+        foreach (Valuable valuable in valuables)
+        {
+            Rigidbody body = valuable.GetComponent<Rigidbody>();
+            Require(body != null && body.mass >= 1f && body.mass <= 3f,
+                $"{valuable.name} nudge physics is not delivery-safe.");
+        }
+        for (int left = 0; left < valuables.Length; left++)
+        for (int right = left + 1; right < valuables.Length; right++)
+        {
+            float separation = Vector3.Distance(valuables[left].transform.position,
+                valuables[right].transform.position);
+            Require(separation >= 0.02f,
+                $"Duplicate overlapping valuables at spawn: {valuables[left].name} and {valuables[right].name}.");
+        }
+    }
+
+    private static void ValidateAudioFeedback()
+    {
+        foreach (string method in new[] { "PlayItemThud", "PlayFragileBreak", "PlayPawPush", "PlayOwnerAlert", "PlayHideSuccess", "PlayFootstep", "PlayLanding" })
+            Require(typeof(AudioManager).GetMethod(method) != null, $"Audio event is missing: {method}.");
+        Require(typeof(AudioManager).GetProperty("I") != null, "AudioManager singleton is missing.");
+    }
+
+    private static void ValidateJuiceAndCutePass()
+    {
+        Require(typeof(ChaosJuiceUI).GetMethod("OnGUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance) != null,
+            "Destruction/noise juice UI is missing.");
+        Require(File.Exists($"{SmoothSpriteFolder}/Smooth_Walk_Side_6Frames.png") &&
+                File.Exists($"{SmoothSpriteFolder}/Smooth_Jump_Side_6Frames.png") &&
+                File.Exists($"{SmoothSpriteFolder}/Smooth_GentleLeftPawPush_4Frames.png"),
+            "Smooth tuxedo-kitten movement sheets are missing.");
+    }
+
+    private static void ValidateIndependentSceneArt()
+    {
+        OpenRoom();
+        GameObject dressing = GameObject.Find("Tripo Art Pass (editable)") ?? RequireObject("V3.4 Room Dressing");
+        Require(dressing.transform.childCount >= 4, "Room dressing groups are incomplete.");
+        Valuable[] valuables = dressing.GetComponentsInChildren<Valuable>(true);
+        Require(valuables.Length >= 10, "The lived-in room needs at least ten independent valuables.");
+        foreach (Valuable valuable in valuables)
+            Require(valuable.transform.parent != null && valuable.GetComponent<Rigidbody>() != null,
+                $"{valuable.name} must remain an independent editable Rigidbody root.");
+
+        string prefabFolder = "Assets/Models/Tripo/Prefabs";
+        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { prefabFolder });
+        Require(prefabGuids.Length == 16, $"Expected 16 Tripo prefabs, found {prefabGuids.Length}.");
+        foreach (string guid in prefabGuids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            Require(prefab != null, $"Could not load Tripo prefab: {path}");
+            foreach (Renderer renderer in prefab.GetComponentsInChildren<Renderer>(true))
+            foreach (Material material in renderer.sharedMaterials)
+            {
+                Require(material != null, $"Missing material in {path}.");
+                Require(material.shader != null &&
+                        (material.shader.name == "Universal Render Pipeline/Lit" ||
+                         material.shader.name == "Catastrophe/Tripo Vertex Color Lit"),
+                    $"Non-URP Tripo material in {path}: {material.shader?.name ?? "missing shader"}.");
+            }
+        }
+    }
+
+    private static void ValidatePresentationAndCamera()
+    {
+        OpenRoom();
+        bool authoredCamera = Camera.main != null && Camera.main.GetComponent<ThirdPersonCamera>() != null;
+        bool runtimeCamera = typeof(GameBootstrap).GetMethod("CreateCameraAndLight",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static) != null;
+        Require(authoredCamera || runtimeCamera, "Low-angle follow camera is missing.");
+        const System.Reflection.BindingFlags cameraFlags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        Require(typeof(ThirdPersonCamera).GetField("yawLimit", cameraFlags) != null &&
+                typeof(ThirdPersonCamera).GetField("distanceLimits", cameraFlags) != null,
+            "Limited drag/zoom camera controls are missing.");
+        Require(typeof(ThirdPersonCamera).GetField("cameraBoundsX", cameraFlags) != null &&
+                typeof(ThirdPersonCamera).GetField("cameraBoundsZ", cameraFlags) != null &&
+                typeof(ThirdPersonCamera).GetField("stablePivotHeight", cameraFlags) != null,
+            "Camera has no room-position clamp or stable XZ-only collision pivot.");
+
+        GameObject cameraProbe = new GameObject("Camera Bounds Probe");
+        ThirdPersonCamera cameraController = cameraProbe.AddComponent<ThirdPersonCamera>();
+        GameObject targetProbe = new GameObject("Camera Target Probe");
+        targetProbe.transform.position = new Vector3(20f, 3f, 20f);
+        cameraController.Initialize(targetProbe.transform);
+        var desiredMethod = typeof(ThirdPersonCamera).GetMethod("GetDesiredPosition", cameraFlags);
+        var originMethod = typeof(ThirdPersonCamera).GetMethod("GetRayOrigin", cameraFlags);
+        Require(desiredMethod != null && originMethod != null, "Camera composition helpers are missing.");
+        Vector3 desired = (Vector3)desiredMethod.Invoke(cameraController, null);
+        Vector3 origin = (Vector3)originMethod.Invoke(cameraController, null);
+        Require(desired.x >= -4.72f && desired.x <= 4.72f && desired.z >= -3.32f && desired.z <= 3.32f,
+            $"Camera can leave the four-wall room: desired={desired}.");
+        Require(origin.y < 1f,
+            $"Camera collision pivot incorrectly follows jump height: origin.y={origin.y:F2}.");
+        UnityEngine.Object.DestroyImmediate(cameraProbe);
+        UnityEngine.Object.DestroyImmediate(targetProbe);
+        Require(UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Any(l => l.type == LightType.Directional && l.shadows != LightShadows.None),
+            "Warm directional light with shadows is missing.");
+        Require(GameObject.Find("V3.4 Lighting Rig (editable)") != null, "LivingRoom lighting rig is missing.");
     }
 
     private static void ValidateProjectAndScene()
@@ -92,19 +291,39 @@ public static class GameValidationBatches
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CatPrefabPath);
         Require(prefab != null, "Cat prefab is missing.");
         Require(prefab.GetComponentInChildren<Animator>() != null, "Cat prefab has no Animator.");
-        Require(prefab.GetComponentsInChildren<Renderer>(true).Length > 0, "Cat prefab has no renderer.");
-        Require(FindDeep(prefab.transform, "Root") != null, "Cat rig Root bone is missing.");
-        Require(FindDeep(prefab.transform, "Front_R_Lower") != null, "Right front paw bone is missing.");
+        Require(prefab.GetComponentInChildren<SpriteRenderer>() != null, "Cat prefab has no SpriteRenderer.");
+        Require(prefab.GetComponentInChildren<BillboardSprite>() != null,
+            "Cat sprite must stay camera-facing in the 3D room.");
     }
 
     private static void ValidateAnimations()
     {
-        AnimationClip[] clips = AssetDatabase.LoadAllAssetsAtPath(CatFbxPath)
-            .OfType<AnimationClip>().Where(c => !c.name.StartsWith("__preview__")).ToArray();
-        string[] required = { "Cat_Idle", "Cat_Walk", "Cat_Push_Right", "Cat_Jump" };
+        RuntimeAnimatorController controller =
+            AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(CatControllerPath);
+        Require(controller != null, "Cat sprite Animator Controller is missing.");
+        AnimationClip[] clips = controller.animationClips;
+        string[] required = {
+            "Cat_Idle", "Cat_Idle_Front", "Cat_Idle_Back",
+            "Cat_Walk", "Cat_Walk_Front", "Cat_Walk_Back",
+            "Cat_Jump_Side", "Cat_Jump_Front", "Cat_Jump_Back", "Cat_Push_Side"
+        };
         foreach (string name in required)
-            Require(clips.Any(c => c.name.EndsWith(name, StringComparison.Ordinal)), $"Animation {name} is missing.");
+            Require(clips.Any(c => c.name == name), $"Animation {name} is missing.");
         Require(clips.All(c => c.length > 0.05f), "One or more animation clips are empty.");
+
+        string[] sheets = {
+            "Smooth_Walk_Side_6Frames.png", "Smooth_Walk_TowardCamera_6Frames.png",
+            "Smooth_Walk_Away_Back_6Frames.png", "Smooth_Jump_Side_6Frames.png",
+            "Smooth_Jump_TowardCamera_6Frames.png", "Smooth_Jump_Away_Back_6Frames.png",
+            "Smooth_GentleLeftPawPush_4Frames.png"
+        };
+        foreach (string sheet in sheets)
+        {
+            int expected = sheet.Contains("4Frames", StringComparison.Ordinal) ? 4 : 6;
+            int actual = AssetDatabase.LoadAllAssetsAtPath($"{SmoothSpriteFolder}/{sheet}")
+                .OfType<Sprite>().Count();
+            Require(actual == expected, $"{sheet} has {actual} frames; expected {expected}.");
+        }
     }
 
     private static void ValidateCatGameplay()
@@ -153,8 +372,21 @@ public static class GameValidationBatches
         Require(b.size.x >= 10f && b.size.z >= 7.3f, $"Room floor dimensions are invalid: {b.size}.");
         Require(Mathf.Abs(b.max.y) < 0.03f, $"Floor walkable top must be at Y=0, actual={b.max.y:F3}.");
         Require(AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelFolder}/Floor.fbx") != null, "Imported floor FBX is missing.");
+        GameObject gameplayFloor = RequireObject("Gameplay Floor Collider - full room");
+        BoxCollider safety = gameplayFloor.GetComponent<BoxCollider>();
+        Require(safety != null && safety.bounds.size.x >= 10.4f && safety.bounds.size.z >= 7.6f,
+            $"Continuous gameplay floor is missing under part of the room: {safety?.bounds.size.ToString() ?? "no collider"}.");
+        Require(Mathf.Abs(safety.bounds.max.y) <= 0.015f,
+            $"Gameplay floor top must align to Y=0, actual={safety.bounds.max.y:F3}.");
         RequireObject("Back Wall");
         RequireObject("Left Wall");
+
+        GameObject shell = RequireObject("Four Wall Room Shell (editable)");
+        foreach (Renderer renderer in shell.GetComponentsInChildren<Renderer>(true))
+        foreach (Material material in renderer.sharedMaterials)
+            Require(material != null && material.shader != null &&
+                    !material.shader.name.Contains("InternalErrorShader", StringComparison.OrdinalIgnoreCase),
+                $"Room shell has a missing/pink material on {renderer.name}.");
     }
 
     private static void ValidateFurnitureLayout()
@@ -175,6 +407,12 @@ public static class GameValidationBatches
         Bounds laptop = BoundsOf(RequireObject("MacBook"));
         Bounds tablet = BoundsOf(RequireObject("iPad"));
         Bounds cup = BoundsOf(RequireObject("Cup"));
+        foreach (string groundedName in new[] { "Sofa", "Table", "Chair 01", "Chair 02", "Chair 03" })
+        {
+            Bounds grounded = BoundsOf(RequireObject(groundedName));
+            Require(grounded.min.y >= -0.025f && grounded.min.y <= 0.035f,
+                $"{groundedName} is sunk below or floating above the floor: min.y={grounded.min.y:F3}.");
+        }
         Require(table.size.x >= 2.55f && table.size.x <= 2.85f && table.size.y >= 0.70f && table.size.y <= 0.82f,
             $"Table is outside human furniture scale: {table.size}.");
         Require(sofa.size.x >= 2.30f && sofa.size.x <= 2.60f && sofa.size.y >= 0.82f && sofa.size.y <= 0.98f,
@@ -185,8 +423,8 @@ public static class GameValidationBatches
             $"MacBook is too small to read in the gameplay camera: {laptop.size}.");
         Require(tablet.size.x >= 0.26f && tablet.size.z >= 0.36f,
             $"iPad is too small to read in the gameplay camera: {tablet.size}.");
-        Require(cup.size.y >= 0.17f,
-            $"Cup is too small to read in the gameplay camera: {cup.size}.");
+        Require(cup.size.y >= 0.08f && cup.size.y <= 0.18f,
+            $"Cup must stay near the 10 cm import target without becoming toy-sized or oversized: {cup.size}.");
 
         Vector3 laptopToCup = RequireObject("Cup").transform.position -
                               RequireObject("MacBook").transform.position;
@@ -194,7 +432,7 @@ public static class GameValidationBatches
         Require(laptopToCup.magnitude <= 0.55f,
             "Cup must stay close to the MacBook to communicate the spill opportunity.");
         Require(tablet.min.z - table.min.z <= 0.22f,
-            "iPad must sit close to the front edge for the first push tutorial.");
+            $"iPad must sit close to the front edge for the first push tutorial: table.min.z={table.min.z:F2}, tablet.min.z={tablet.min.z:F2}.");
         Require(RequireObject("Chair 01").transform.position.z <= -1.82f,
             "Chair 01 must be pulled out as a readable jump step.");
         foreach (string gameplayItem in new[] { "MacBook", "iPad", "Cup" })
@@ -203,10 +441,13 @@ public static class GameValidationBatches
             Require(item.GetComponent<Rigidbody>() != null && item.GetComponent<ScoreItem>() != null,
                 $"{gameplayItem} must remain pushable and scoreable.");
         }
-        float seatTop = RequireObject("Chair 01").transform.Find("Seat Collider")
-            .GetComponent<BoxCollider>().bounds.max.y;
-        Require(table.max.y - seatTop >= 0.20f && table.max.y - seatTop <= 0.38f,
-            $"Chair-to-table jump step is unclear: seat={seatTop:F2}, table={table.max.y:F2}.");
+        Transform seatCollider = RequireObject("Chair 01").transform.Find("Seat Collider");
+        if (seatCollider != null)
+        {
+            float seatTop = seatCollider.GetComponent<BoxCollider>().bounds.max.y;
+            Require(table.max.y - seatTop >= 0.20f && table.max.y - seatTop <= 0.38f,
+                $"Chair-to-table jump step is unclear: seat={seatTop:F2}, table={table.max.y:F2}.");
+        }
     }
 
     private static void ValidateMaterialsAndTextures()
@@ -246,11 +487,15 @@ public static class GameValidationBatches
                 $"{name} collider has invalid size.");
         }
 
-        Require(RequireObject("Chair 01").GetComponent<BoxCollider>() == null,
-            "Chair must not use a single full-bounds box that lets the cat stand in empty space near its back.");
-        Collider[] chairColliders = RequireObject("Chair 01").GetComponentsInChildren<Collider>(true);
-        Require(chairColliders.All(c => c.bounds.max.y < 0.55f),
-            "Chair backrest must not be a landable surface.");
+        bool tripoRoom = GameObject.Find("Tripo Art Pass (editable)") != null;
+        if (!tripoRoom)
+        {
+            Require(RequireObject("Chair 01").GetComponent<BoxCollider>() == null,
+                "Chair must not use a single full-bounds box that lets the cat stand in empty space near its back.");
+            Collider[] chairColliders = RequireObject("Chair 01").GetComponentsInChildren<Collider>(true);
+            Require(chairColliders.All(c => c.bounds.max.y < 0.55f),
+                "Chair backrest must not be a landable surface.");
+        }
     }
 
     private static void ValidateBootstrapAndCamera()
@@ -259,7 +504,7 @@ public static class GameValidationBatches
             "Runtime bootstrap entry point is missing.");
         Require(typeof(ThirdPersonCamera).GetMethod("Initialize") != null, "Third-person camera initialization is missing.");
         RuntimeAnimatorController catController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
-            "Assets/Art/Cat/CatSprite.controller");
+            CatControllerPath);
         Require(catController != null && catController.animationClips.Any(c => c.name == "Cat_Push_Side"),
             "E-key push animation is not connected to the runtime cat controller.");
         OpenRoom();

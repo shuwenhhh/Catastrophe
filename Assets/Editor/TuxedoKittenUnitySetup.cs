@@ -7,8 +7,8 @@ using UnityEngine;
 public static class TuxedoKittenUnitySetup
 {
     private const string Folder = "Assets/Art/TuxedoKitten";
-    private const string FbxPath = Folder + "/TuxedoKitten_Rigged_SoftFur.fbx";
-    private const string BaseColorPath = Folder + "/TuxedoKitten_BaseColor_Soft.png";
+    private const string FbxPath = Folder + "/TuxedoKitten_Rigged.fbx";
+    private const string BaseColorPath = Folder + "/TuxedoKitten_BaseColor.png";
     private const string MaterialPath = Folder + "/TuxedoKitten_URP.mat";
     private const string ControllerPath = Folder + "/TuxedoKitten.controller";
     private const string PrefabFolder = "Assets/Resources/TuxedoKitten";
@@ -108,7 +108,8 @@ public static class TuxedoKittenUnitySetup
         Texture2D baseColor = AssetDatabase.LoadAssetAtPath<Texture2D>(BaseColorPath);
         material.SetTexture("_BaseMap", baseColor);
         material.SetColor("_BaseColor", Color.white);
-        material.SetFloat("_Smoothness", 0.08f);
+        // Smooth painted-vinyl response: explicitly avoid fuzzy/fur shading.
+        material.SetFloat("_Smoothness", 0.42f);
         material.SetFloat("_Metallic", 0f);
         EditorUtility.SetDirty(material);
         return material;
