@@ -320,11 +320,14 @@ public sealed class GameBootstrap : MonoBehaviour
 
     private static void CreateHideSpots()
     {
-        CreateHideSpot("Hide Spot - Cardboard Box", "纸箱", new Vector3(-5.1f, 0.35f, -2.4f),
+        // Cardboard box kept clear of the left wall (inner face x=-5.16).
+        CreateHideSpot("Hide Spot - Cardboard Box", "纸箱", new Vector3(-4.5f, 0.35f, -2.4f),
             new Vector3(1.15f, 0.7f, 1.15f), new Color(0.55f, 0.32f, 0.13f, 0.72f));
         CreateHideSpot("Hide Spot - Under Sofa", "沙发底", new Vector3(3.9f, 0.22f, -2.25f),
             new Vector3(2.4f, 0.44f, 1.05f), new Color(0.34f, 0.22f, 0.16f, 0.32f));
-        CreateHideSpot("Hide Spot - Behind Curtain", "窗帘后", new Vector3(-6.25f, 1.15f, 4.55f),
+        // Behind the right-wall curtains (Tripo window at x=5.12). The old
+        // (-6.25, 1.15, 4.55) was outside the four-wall room.
+        CreateHideSpot("Hide Spot - Behind Curtain", "窗帘后", new Vector3(4.7f, 1.0f, 0f),
             new Vector3(0.65f, 2.3f, 1.45f), new Color(0.72f, 0.32f, 0.38f, 0.32f));
     }
 
