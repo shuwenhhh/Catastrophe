@@ -112,3 +112,10 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Project-generated source duplicates and visual audit evidence.
+# Runtime prefabs use Assets/Models/Tripo/FBX; keep original GLB drops outside git.
+/Assets/Models/Tripo/Source/
+/Validation/VideoAudit-*/frames/
+/Validation/VideoAudit-*/*.jpg
+/Validation/VideoAudit-*/*.png

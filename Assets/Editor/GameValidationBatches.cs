@@ -14,7 +14,7 @@ public static class GameValidationBatches
     private const string CatPrefabPath = "Assets/Resources/Cat/CatSprite.prefab";
     private const string CatControllerPath = "Assets/Art/Cat/CatSprite.controller";
     private const string SmoothSpriteFolder = "Assets/Art/TuxedoKitten/GeneratedSmoothSprites";
-    private const string ModelFolder = "Assets/Art/LivingRoom/Models";
+    private const string TripoFbxFolder = "Assets/Models/Tripo/FBX";
 
     public static void Batch01() => Execute(1);
     public static void Batch02() => Execute(2);
@@ -371,7 +371,8 @@ public static class GameValidationBatches
         Bounds b = BoundsOf(floor);
         Require(b.size.x >= 10f && b.size.z >= 7.3f, $"Room floor dimensions are invalid: {b.size}.");
         Require(Mathf.Abs(b.max.y) < 0.03f, $"Floor walkable top must be at Y=0, actual={b.max.y:F3}.");
-        Require(AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelFolder}/Floor.fbx") != null, "Imported floor FBX is missing.");
+        Require(AssetDatabase.LoadAssetAtPath<GameObject>($"{TripoFbxFolder}/Tripo_Floor.fbx") != null,
+            "Imported Tripo floor FBX is missing.");
         GameObject gameplayFloor = RequireObject("Gameplay Floor Collider - full room");
         BoxCollider safety = gameplayFloor.GetComponent<BoxCollider>();
         Require(safety != null && safety.bounds.size.x >= 10.4f && safety.bounds.size.z >= 7.6f,
@@ -453,10 +454,10 @@ public static class GameValidationBatches
     private static void ValidateMaterialsAndTextures()
     {
         string[] textures = {
-            $"{ModelFolder}/Textures/Floor/Oak_grain_texture.png",
-            $"{ModelFolder}/Textures/Table/Oak_grain_texture.png",
-            $"{ModelFolder}/Textures/Chair/Oak_grain_texture.png",
-            $"{ModelFolder}/Textures/Sofa/Image_0.png"
+            $"{TripoFbxFolder}/Textures/Tripo_Floor/00_Oak_grain_texture.png",
+            $"{TripoFbxFolder}/Textures/Tripo_Table/00_Oak_grain_texture.png",
+            $"{TripoFbxFolder}/Textures/Tripo_Chair/00_Oak_grain_texture.png",
+            $"{TripoFbxFolder}/Textures/Tripo_Sofa/00_Image_0.png"
         };
         foreach (string path in textures)
             Require(AssetDatabase.LoadAssetAtPath<Texture2D>(path) != null, $"Texture missing: {path}");

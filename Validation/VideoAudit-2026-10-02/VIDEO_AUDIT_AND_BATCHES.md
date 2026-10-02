@@ -38,11 +38,8 @@
 
 ## 证据文件
 
-- `contact_sheet_1.jpg`：0–14.39s
-- `contact_sheet_2.jpg`：16.19–30.57s
-- `contact_sheet_3.jpg`：32.37–43.16s
-- `frames/`：25 张原分辨率时间戳帧
-- `evidence_floor_gap_and_pink_material.png`：地板/家具贴地与粉色材质补充证据
+- 原 contact sheets、逐帧截图、补充证据图已从 git 中移除，避免仓库 clone 体积过大。
+- 如需重新生成视觉证据，请从原始录屏重新抽帧，不要把生成帧提交进仓库。
 - `UnityLogs/batch_20_continue.log`：`GAME_VALIDATION_BATCH_20_PASSED`
 
 说明：仅凭录屏不能宣称 WCAG、键盘焦点、触屏手势或音频事件全部通过；这些项目保留到运行时批次验证。

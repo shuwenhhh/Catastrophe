@@ -88,6 +88,9 @@ Validation/
   VideoAudit-2026-10-02/  Video audit notes and recent Unity logs
 ```
 
+Large generated review frames and original Tripo source GLB duplicates are kept
+out of git so fresh clones do not have to download unused binary evidence.
+
 ## Validation
 
 With Unity closed, run the complete regression suite from the repository root:

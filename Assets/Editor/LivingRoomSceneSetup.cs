@@ -18,67 +18,7 @@ public static class LivingRoomSceneSetup
     [MenuItem("Catastrophe/Build Editable Living Room")]
     public static void Build()
     {
-        Scene scene = SceneManager.GetActiveScene();
-        if (scene.path != ScenePath)
-            scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-        GameObject old = GameObject.Find("Living Room");
-        if (old != null)
-            UnityEngine.Object.DestroyImmediate(old);
-
-        GameObject room = new GameObject("Living Room");
-        GameObject architecture = Child(room, "Architecture (editable)");
-        GameObject floor = PlaceSized("Floor", architecture.transform, Vector3.zero, 0f,
-            new Vector3(10.5f, 0.18f, 7.7f), false);
-        // Imported floor meshes have thickness. Keep the walkable top exactly at Y=0.
-        floor.transform.position += Vector3.down * GetBounds(floor).max.y;
-        CreateBox(architecture.transform, "Back Wall", new Vector3(0f, 2f, 3.85f),
-            new Vector3(10.5f, 4f, 0.18f), new Color(0.91f, 0.84f, 0.74f));
-        CreateBox(architecture.transform, "Left Wall", new Vector3(-5.25f, 2f, 0f),
-            new Vector3(0.18f, 4f, 7.7f), new Color(0.91f, 0.84f, 0.74f));
-
-        GameObject furniture = Child(room, "Furniture (move each item freely)");
-        PlaceSized("Sofa", furniture.transform, new Vector3(-3.45f, 0f, 2.85f), 180f,
-            new Vector3(2.45f, 0.90f, 1.02f), false);
-
-        GameObject table = PlaceSized("Table", furniture.transform, new Vector3(1.55f, 0f, -0.35f), 0f,
-            new Vector3(2.70f, 0.76f, 1.40f), false);
-        // Pull the left-front chair out far enough to read as an intentional
-        // floor -> seat -> tabletop jump route in the gameplay camera.
-        GameObject chair01 = PlaceSized("Chair 01", furniture.transform, new Vector3(0.62f, 0f, -1.90f), 180f,
-            new Vector3(0.58f, 0.90f, 0.62f), false, "Chair");
-        GameObject chair02 = PlaceSized("Chair 02", furniture.transform, new Vector3(2.28f, 0f, -1.62f), 180f,
-            new Vector3(0.58f, 0.90f, 0.62f), false, "Chair");
-        GameObject chair03 = PlaceSized("Chair 03", furniture.transform, new Vector3(1.55f, 0f, 0.92f), 0f,
-            new Vector3(0.58f, 0.90f, 0.62f), false, "Chair");
-        ConfigureChairColliders(chair01);
-        ConfigureChairColliders(chair02);
-        ConfigureChairColliders(chair03);
-
-        float tableTop = GetBounds(table).max.y + 0.008f;
-        PlaceSized("MacBook", furniture.transform, new Vector3(1.00f, tableTop, -0.25f),
-            -10f, new Vector3(0.54f, 0.31f, 0.38f), true, "Laptop", false);
-        // Keep the cup close enough to the laptop to communicate the spill
-        // opportunity while leaving a clear approach lane for the cat.
-        PlaceSized("Cup", furniture.transform, new Vector3(1.47f, tableTop, -0.20f), 0f,
-            new Vector3(0.15f, 0.19f, 0.15f), true, null, false);
-        // The first tutorial target sits close to the front edge so one paw
-        // push gives immediate, legible feedback.
-        PlaceSized("iPad", furniture.transform, new Vector3(2.30f, tableTop, -0.88f),
-            12f, new Vector3(0.28f, 0.025f, 0.40f), true, "Tablet", false);
-
-        ConfigureWoodMaterials(floor, table, chair01, chair02, chair03);
-
-        // v3.4 art direction: serialize every shelf piece, prop and soft furnishing
-        // as an independent hierarchy object so artists can freely move or restyle it.
-        LivingRoomArtInstaller.BuildInRoom(room.transform);
-
-        // Lighting is installed after this scene save by its independent menu command.
-        // Keeping the rig outside "Living Room" means rebuilding art never deletes it.
-
-        Selection.activeGameObject = room;
-        EditorSceneManager.MarkSceneDirty(scene);
-        EditorSceneManager.SaveScene(scene);
-        Debug.Log("Living Room built: all furniture is separate and editable in the Hierarchy.");
+        TripoBatchImporter.ImportAndBuild();
     }
 
     private static void ConfigureWoodMaterials(GameObject floor, GameObject table,
