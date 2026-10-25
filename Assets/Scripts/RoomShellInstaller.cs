@@ -5,65 +5,111 @@ using UnityEditor;
 
 public static class RoomShellInstaller
 {
+    public const float RoomWidth = 8.8f;
+    public const float RoomDepth = 6.6f;
+    public const float RoomHeight = 4.0f;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void RuntimeInstall() => EnsureInstalled();
 
     public static GameObject EnsureInstalled()
     {
         GameObject existing = GameObject.Find("Four Wall Room Shell (editable)");
-        if (existing != null) return existing;
+        if (existing != null)
+        {
+            SanitizeMaterials(existing);
+            return existing;
+        }
         GameObject room = GameObject.Find("Living Room");
         if (room == null) return null;
 
-        Renderer source = GameObject.Find("Back Wall")?.GetComponent<Renderer>();
-        Material wall = source != null ? source.sharedMaterial : Material(new Color(0.88f, 0.82f, 0.70f));
-        Material trim = Material(new Color(0.94f, 0.90f, 0.82f));
-        Material wood = Material(new Color(0.46f, 0.25f, 0.12f));
+        Material wall = Material(new Color(0.98f, 0.965f, 0.93f));
+        Material trim = Material(new Color(0.98f, 0.96f, 0.91f));
+        Material wood = Material(new Color(0.57f, 0.38f, 0.22f));
         Material glass = Material(new Color(0.52f, 0.76f, 0.86f));
-        Material curtain = Material(new Color(0.72f, 0.27f, 0.20f));
+        ConfigureBaseWall("Back Wall", new Vector3(0f, RoomHeight * .5f, RoomDepth * .5f),
+            new Vector3(RoomWidth, RoomHeight, .18f), wall);
+        ConfigureBaseWall("Left Wall", new Vector3(-RoomWidth * .5f, RoomHeight * .5f, 0f),
+            new Vector3(.18f, RoomHeight, RoomDepth), wall);
         GameObject root = new("Four Wall Room Shell (editable)");
         root.transform.SetParent(room.transform, false);
 
         // Right wall with a 2.4 x 1.7 m window opening.
-        Part(root.transform, "Right Wall - lower", new(5.25f, .65f, 0), new(.18f, 1.3f, 7.7f), wall);
-        Part(root.transform, "Right Wall - upper", new(5.25f, 3.45f, 0), new(.18f, 1.1f, 7.7f), wall);
-        Part(root.transform, "Right Wall - front pier", new(5.25f, 2f, -2.55f), new(.18f, 2.8f, 2.6f), wall);
-        Part(root.transform, "Right Wall - rear pier", new(5.25f, 2f, 2.55f), new(.18f, 2.8f, 2.6f), wall);
-        Transform window = new GameObject("Window and Curtains - replaceable Tripo 16").transform;
-        window.SetParent(root.transform, false); window.localPosition = new(5.12f, 2.05f, 0);
-        Part(window, "Window glass", Vector3.zero, new(.05f, 1.62f, 2.35f), glass);
-        Part(window, "Window frame top", new(-.05f, .86f, 0), new(.14f, .10f, 2.55f), trim);
-        Part(window, "Window frame bottom", new(-.05f, -.86f, 0), new(.14f, .10f, 2.55f), trim);
-        Part(window, "Window frame centre", new(-.06f, 0, 0), new(.14f, 1.72f, .09f), trim);
-        Part(window, "Curtain front", new(-.22f, 0, -1.47f), new(.16f, 2.65f, .48f), curtain);
-        Part(window, "Curtain rear", new(-.22f, 0, 1.47f), new(.16f, 2.65f, .48f), curtain);
+        Part(root.transform, "Right Wall - lower", new(RoomWidth * .5f, .60f, 0), new(.18f, 1.20f, RoomDepth), wall);
+        Part(root.transform, "Right Wall - upper", new(RoomWidth * .5f, 3.45f, 0), new(.18f, 1.10f, RoomDepth), wall);
+        Part(root.transform, "Right Wall - front pier", new(RoomWidth * .5f, 2.0f, -2.25f), new(.18f, 2.90f, 2.10f), wall);
+        Part(root.transform, "Right Wall - rear pier", new(RoomWidth * .5f, 2.0f, 2.25f), new(.18f, 2.90f, 2.10f), wall);
+        // Tripo_Curtain supplies the window dressing; keep the wall opening clear
+        // instead of generating the old primitive placeholder.
 
         // Front wall with a framed door opening.
-        Part(root.transform, "Front Wall - left", new(-3.55f, 2f, -3.85f), new(3.4f, 4f, .18f), wall);
-        Part(root.transform, "Front Wall - right", new(1.45f, 2f, -3.85f), new(7.6f, 4f, .18f), wall);
-        Part(root.transform, "Front Wall - door lintel", new(-1.05f, 3.55f, -3.85f), new(1.6f, .9f, .18f), wall);
-        Part(root.transform, "Door", new(-1.05f, 1.5f, -3.76f), new(1.38f, 3f, .12f), wood);
-        Part(root.transform, "Door frame left", new(-1.80f, 1.55f, -3.62f), new(.12f, 3.2f, .14f), trim);
-        Part(root.transform, "Door frame right", new(-.30f, 1.55f, -3.62f), new(.12f, 3.2f, .14f), trim);
-        Part(root.transform, "Door frame top", new(-1.05f, 3.12f, -3.62f), new(1.62f, .12f, .14f), trim);
+        Part(root.transform, "Front Wall - left", new(-3.15f, 2f, -RoomDepth * .5f), new(2.50f, 4f, .18f), wall);
+        Part(root.transform, "Front Wall - right", new(1.25f, 2f, -RoomDepth * .5f), new(6.30f, 4f, .18f), wall);
+        Part(root.transform, "Front Wall - door lintel", new(-1.05f, 3.55f, -RoomDepth * .5f), new(1.30f, .9f, .18f), wall);
+        Part(root.transform, "Door", new(-1.05f, 1.5f, -RoomDepth * .5f + .09f), new(1.18f, 3f, .12f), wood);
+        Part(root.transform, "Door frame left", new(-1.70f, 1.55f, -RoomDepth * .5f + .23f), new(.12f, 3.2f, .14f), trim);
+        Part(root.transform, "Door frame right", new(-.40f, 1.55f, -RoomDepth * .5f + .23f), new(.12f, 3.2f, .14f), trim);
+        Part(root.transform, "Door frame top", new(-1.05f, 3.12f, -RoomDepth * .5f + .23f), new(1.42f, .12f, .14f), trim);
 
         // Matching skirting, split around the door.
-        Part(root.transform, "Right skirting", new(5.12f, .12f, 0), new(.12f, .24f, 7.7f), trim);
-        Part(root.transform, "Front skirting left", new(-3.55f, .12f, -3.70f), new(3.4f, .24f, .12f), trim);
-        Part(root.transform, "Front skirting right", new(1.45f, .12f, -3.70f), new(7.6f, .24f, .12f), trim);
+        Part(root.transform, "Right skirting", new(RoomWidth * .5f - .13f, .12f, 0), new(.12f, .24f, RoomDepth), trim);
+        Part(root.transform, "Front skirting left", new(-3.15f, .12f, -RoomDepth * .5f + .15f), new(2.50f, .24f, .12f), trim);
+        Part(root.transform, "Front skirting right", new(1.25f, .12f, -RoomDepth * .5f + .15f), new(6.30f, .24f, .12f), trim);
 
-        // Two independent plant prints (replaceable with Tripo prompt 8 output).
-        Painting(root.transform, new(-3.55f, 2.15f, 3.72f), "Plant Print 01", new(.22f,.52f,.28f));
-        Painting(root.transform, new(-2.35f, 2.35f, 3.72f), "Plant Print 02", new(.38f,.62f,.32f));
+        // The sofa wall is reserved for the owner's cat portrait.
+        SanitizeMaterials(root);
         return root;
     }
 
-    private static void Painting(Transform p, Vector3 pos, string name, Color leaf)
+    private static void SanitizeMaterials(GameObject root)
     {
-        Transform g = new GameObject(name + " - replaceable Tripo 08").transform; g.SetParent(p, false); g.localPosition = pos;
-        Part(g, "Frame", Vector3.zero, new(.78f, 1.0f, .08f), Material(new Color(.50f,.29f,.14f)));
-        Part(g, "Paper", new(0,0,-.05f), new(.64f,.84f,.025f), Material(new Color(.94f,.90f,.78f)));
-        Part(g, "Leaf", new(0,.05f,-.075f), new(.30f,.48f,.02f), Material(leaf));
+        Material wall = Material(new Color(0.98f, 0.965f, 0.93f));
+        Material trim = Material(new Color(0.98f, 0.96f, 0.91f));
+        Material wood = Material(new Color(0.57f, 0.38f, 0.22f));
+        Material glass = Material(new Color(0.52f, 0.76f, 0.86f));
+        Material curtain = Material(new Color(0.88f, 0.82f, 0.72f));
+        Material paper = Material(new Color(.94f,.90f,.78f));
+        Material leaf = Material(new Color(.30f,.56f,.30f));
+        Material frame = Material(new Color(.62f,.46f,.29f));
+
+        AssignSceneMaterial("Back Wall", wall);
+        AssignSceneMaterial("Left Wall", wall);
+        foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+        {
+            // Explicitly authored room finishes must survive the legacy
+            // placeholder cleanup on scene load. Keep its other safeguards.
+            if (HasAuthoredFinish(renderer)) continue;
+            string n = renderer.name.ToLowerInvariant();
+            if (n.Contains("curtain")) renderer.sharedMaterial = curtain;
+            else if (n.Contains("window glass")) renderer.sharedMaterial = glass;
+            else if (n.Contains("wall")) renderer.sharedMaterial = wall;
+            else if (n.Contains("skirting") || n.Contains("window frame") || n.Contains("door frame")) renderer.sharedMaterial = trim;
+            else if (n == "door") renderer.sharedMaterial = wood;
+            else if (n == "frame") renderer.sharedMaterial = frame;
+            else if (n == "paper") renderer.sharedMaterial = paper;
+            else if (n == "leaf") renderer.sharedMaterial = leaf;
+        }
+    }
+
+    private static void AssignSceneMaterial(string objectName, Material material)
+    {
+        Renderer renderer = GameObject.Find(objectName)?.GetComponent<Renderer>();
+        if (renderer != null && !HasAuthoredFinish(renderer)) renderer.sharedMaterial = material;
+    }
+
+    private static bool HasAuthoredFinish(Renderer renderer) => renderer.sharedMaterial != null &&
+        renderer.sharedMaterial.name.StartsWith("Storybook_", System.StringComparison.Ordinal);
+
+    private static void ConfigureBaseWall(string objectName, Vector3 position, Vector3 scale, Material material)
+    {
+        GameObject wall = GameObject.Find(objectName);
+        if (wall == null) return;
+        wall.transform.position = position;
+        wall.transform.rotation = Quaternion.identity;
+        wall.transform.localScale = scale;
+        Renderer renderer = wall.GetComponent<Renderer>();
+        if (renderer != null) renderer.sharedMaterial = material;
+        wall.isStatic = true;
     }
 
     private static GameObject Part(Transform parent, string name, Vector3 pos, Vector3 scale, Material mat)

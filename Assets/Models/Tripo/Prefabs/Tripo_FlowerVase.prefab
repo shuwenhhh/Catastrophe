@@ -120,7 +120,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScoreItem
   points: 40
   displayName: Flower Vase
-  noise: 30
+  noise: 26
+  weight: 2.4
 --- !u!1001 &3962133280326350543
 PrefabInstance:
   m_ObjectHideFlags: 0

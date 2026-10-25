@@ -49,10 +49,10 @@ public static class LivingRoomLightingSetup
         go.transform.rotation = Quaternion.Euler(38f, 154f, 0f);
         Light light = go.AddComponent<Light>();
         light.type = LightType.Directional;
-        light.color = new Color(1.00f, 0.72f, 0.48f);
-        light.intensity = 1.15f;
+        light.color = new Color(1.00f, 0.97f, 0.91f);
+        light.intensity = 1.25f;
         light.shadows = LightShadows.Soft;
-        light.shadowStrength = 0.72f;
+        light.shadowStrength = 0.55f;
         light.shadowBias = 0.045f;
         light.shadowNormalBias = 0.35f;
         light.renderMode = LightRenderMode.ForcePixel;
@@ -66,8 +66,8 @@ public static class LivingRoomLightingSetup
         go.transform.position = new Vector3(-2.6f, 2.35f, -1.35f);
         Light light = go.AddComponent<Light>();
         light.type = LightType.Point;
-        light.color = new Color(0.53f, 0.68f, 0.90f);
-        light.intensity = 1.05f;
+        light.color = new Color(0.94f, 0.97f, 1.00f);
+        light.intensity = 1.35f;
         light.range = 7.5f;
         // The key owns the readable shadow; shadowless fill prevents doubled shadows and dead black areas.
         light.shadows = LightShadows.None;
@@ -86,21 +86,21 @@ public static class LivingRoomLightingSetup
 
         Vignette vignette = GetOrAdd<Vignette>(profile);
         vignette.active = true;
-        vignette.intensity.Override(0.18f);
+        vignette.intensity.Override(0.07f);
         vignette.smoothness.Override(0.34f);
         vignette.rounded.Override(true);
 
         WhiteBalance balance = GetOrAdd<WhiteBalance>(profile);
         balance.active = true;
-        balance.temperature.Override(11f);
-        balance.tint.Override(2f);
+        balance.temperature.Override(0f);
+        balance.tint.Override(0f);
 
         ColorAdjustments colour = GetOrAdd<ColorAdjustments>(profile);
         colour.active = true;
-        colour.postExposure.Override(-0.08f);
-        colour.contrast.Override(7f);
-        colour.saturation.Override(3f);
-        colour.colorFilter.Override(new Color(1.0f, 0.97f, 0.92f));
+        colour.postExposure.Override(0.25f);
+        colour.contrast.Override(3f);
+        colour.saturation.Override(0f);
+        colour.colorFilter.Override(Color.white);
         EditorUtility.SetDirty(profile);
 
         GameObject go = new("Global Volume - subtle warm dusk");
@@ -114,18 +114,23 @@ public static class LivingRoomLightingSetup
 
     private static T GetOrAdd<T>(VolumeProfile profile) where T : VolumeComponent
     {
+        profile.components.RemoveAll(entry => entry == null);
         if (!profile.TryGet(out T component))
+        {
             component = profile.Add<T>(true);
+            AssetDatabase.AddObjectToAsset(component, profile);
+        }
+        EditorUtility.SetDirty(component);
         return component;
     }
 
     private static void ConfigureEnvironment()
     {
         RenderSettings.ambientMode = AmbientMode.Trilight;
-        RenderSettings.ambientSkyColor = new Color(0.31f, 0.38f, 0.51f);
-        RenderSettings.ambientEquatorColor = new Color(0.20f, 0.25f, 0.34f);
-        RenderSettings.ambientGroundColor = new Color(0.09f, 0.10f, 0.14f);
-        RenderSettings.ambientIntensity = 0.82f;
+        RenderSettings.ambientSkyColor = new Color(0.84f, 0.86f, 0.87f);
+        RenderSettings.ambientEquatorColor = new Color(0.76f, 0.75f, 0.71f);
+        RenderSettings.ambientGroundColor = new Color(0.55f, 0.51f, 0.45f);
+        RenderSettings.ambientIntensity = 1f;
         RenderSettings.subtractiveShadowColor = new Color(0.22f, 0.28f, 0.40f);
         RenderSettings.reflectionIntensity = 0.82f;
     }

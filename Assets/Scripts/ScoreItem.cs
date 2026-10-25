@@ -5,6 +5,7 @@ public sealed class ScoreItem : MonoBehaviour
     [SerializeField] private int points;
     [SerializeField] private string displayName;
     [SerializeField] private float noise = 30f;
+    [SerializeField] private float weight = -1f;
 
     public int Points
     {
@@ -30,6 +31,30 @@ public sealed class ScoreItem : MonoBehaviour
         }
     }
 
+    public float Noise
+    {
+        get => noise;
+        set
+        {
+            noise = value;
+            Valuable valuable = GetComponent<Valuable>();
+            if (valuable != null)
+                valuable.noise = value;
+        }
+    }
+
+    public float Weight
+    {
+        get => weight;
+        set
+        {
+            weight = value;
+            Valuable valuable = GetComponent<Valuable>();
+            if (valuable != null)
+                valuable.weight = value;
+        }
+    }
+
     private void Awake()
     {
         ApplyDefaultsForExistingScene();
@@ -42,7 +67,7 @@ public sealed class ScoreItem : MonoBehaviour
         valuable.chaosValue = points;
         valuable.noise = noise;
         valuable.fragile = IsFragile(displayName);
-        valuable.weight = DefaultWeight(displayName);
+        valuable.weight = weight > 0f ? weight : DefaultWeight(displayName);
         valuable.ApplyPhysicsTuning();
         valuable.OnDestroyed += HandleDestroyed;
     }
@@ -75,7 +100,8 @@ public sealed class ScoreItem : MonoBehaviour
     {
         return itemName.Contains("Cup", System.StringComparison.OrdinalIgnoreCase) ||
                itemName.Contains("Mug", System.StringComparison.OrdinalIgnoreCase) ||
-               itemName.Contains("Vase", System.StringComparison.OrdinalIgnoreCase);
+               itemName.Contains("Vase", System.StringComparison.OrdinalIgnoreCase) ||
+               itemName.Contains("Lucky Cat", System.StringComparison.OrdinalIgnoreCase);
     }
 
     private static float DefaultWeight(string itemName)

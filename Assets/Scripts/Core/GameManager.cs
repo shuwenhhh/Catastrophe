@@ -8,6 +8,8 @@ public sealed class GameManager : MonoBehaviour
     public static GameManager I;
 
     public int chaosScore = 0;
+    // Preserve the existing destruction-feedback conversion: one point = ¥100.
+    public long DamageAmount => (long)Mathf.Max(0, chaosScore) * 100L;
     public bool IsFailed { get; private set; }
     public float ElapsedTime => runElapsed;
     public string Grade => ElapsedTime < 90f ? "S" : ElapsedTime < 180f ? "A" : "B";
@@ -52,8 +54,23 @@ public sealed class GameManager : MonoBehaviour
 
     public void BeginRun()
     {
+        chaosScore = 0;
+        receipt.Clear();
         runElapsed = 0f;
         runStarted = true;
+        IsFailed = false;
+        OnChaosChanged?.Invoke(chaosScore);
+    }
+
+    public void RestoreRun(int score, float elapsed, List<GameSaveStore.ReceiptItem> entries)
+    {
+        chaosScore = Mathf.Max(0, score);
+        runElapsed = Mathf.Max(0, elapsed);
+        runStarted = true;
+        IsFailed = false;
+        receipt.Clear();
+        foreach (var entry in entries) receipt.Add(new ChaosEntry(entry.name, entry.points));
+        OnChaosChanged?.Invoke(chaosScore);
     }
 
     private void Update()

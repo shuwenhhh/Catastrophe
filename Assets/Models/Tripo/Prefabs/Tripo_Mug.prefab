@@ -120,7 +120,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScoreItem
   points: 20
   displayName: Mug
-  noise: 30
+  noise: 13
+  weight: 1
 --- !u!1001 &327944102178460337
 PrefabInstance:
   m_ObjectHideFlags: 0

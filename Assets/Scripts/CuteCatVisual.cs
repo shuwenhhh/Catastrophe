@@ -32,6 +32,11 @@ public sealed class CuteCatVisual : MonoBehaviour
     private float alertShakeUntil;
     private Coroutine squashRoutine;
     private NoiseManager observedNoise;
+    // 行走摆动 & 旋转基准（防累积）
+    private Quaternion[] tailBaseRotations;
+    private Quaternion[] earBaseRotations;
+    private Vector3 visualBasePosition;
+    private float walkBobPhase;
 
     private void Awake()
     {
@@ -46,6 +51,14 @@ public sealed class CuteCatVisual : MonoBehaviour
         lowerLegs = FindMany("Front_R_Lower", "Front_L_Lower", "Back_R_Lower", "Back_L_Lower");
         tailBones = FindMany("Tail_01", "Tail_02", "Tail_03");
         earBones = FindNameContains("Ear");
+        // 存基准旋转，后面用绝对值设置，防止 *= 累积转歪
+        tailBaseRotations = new Quaternion[tailBones.Length];
+        for (int i = 0; i < tailBones.Length; i++)
+            tailBaseRotations[i] = tailBones[i].localRotation;
+        earBaseRotations = new Quaternion[earBones.Length];
+        for (int i = 0; i < earBones.Length; i++)
+            earBaseRotations[i] = earBones[i].localRotation;
+        visualBasePosition = visualRoot.localPosition;
         if (head != null)
         {
             headBaseScale = head.localScale;
@@ -127,7 +140,11 @@ public sealed class CuteCatVisual : MonoBehaviour
         float idleAmount = GetComponent<Rigidbody>().linearVelocity.sqrMagnitude < 0.02f ? 1f : 0.35f;
         float sway = Mathf.Sin(Time.time * 2.4f) * tailSwayDegrees * idleAmount;
         for (int index = 0; index < tailBones.Length; index++)
-            tailBones[index].localRotation *= Quaternion.Euler(0f, sway * (0.45f + index * 0.25f), 0f);
+        {
+            float segSway = sway * (0.45f + index * 0.25f);
+            if (index < tailBaseRotations.Length)
+                tailBones[index].localRotation = tailBaseRotations[index] * Quaternion.Euler(0f, segSway, 0f);
+        }
 
         if (Time.time >= nextEarTwitchAt)
         {
@@ -137,8 +154,14 @@ public sealed class CuteCatVisual : MonoBehaviour
         if (Time.time < earTwitchUntil)
         {
             float twitch = Mathf.Sin((earTwitchUntil - Time.time) * 65f) * 6f;
-            foreach (Transform ear in earBones)
-                ear.localRotation *= Quaternion.Euler(0f, 0f, twitch);
+            for (int e = 0; e < earBones.Length; e++)
+                earBones[e].localRotation = earBaseRotations[e] * Quaternion.Euler(0f, 0f, twitch);
+        }
+        else
+        {
+            // 不抽动时恢复基准，防止残留角度
+            for (int e = 0; e < earBones.Length && e < earBaseRotations.Length; e++)
+                earBones[e].localRotation = earBaseRotations[e];
         }
 
         if (Time.time >= nextBlinkAt)
@@ -153,6 +176,31 @@ public sealed class CuteCatVisual : MonoBehaviour
         {
             float blink = Time.time < blinkUntil ? 0.92f : 1f;
             head.localScale = Vector3.Scale(headBaseScale * headScale, new Vector3(1f, 1f, blink));
+        }
+
+        // 轻量行走摆动：身体随步伐轻微起伏 + 左右重心摇摆
+        // 不碰腿部动画，只给躯干加二次运动，缓解"木板身体"感
+        Rigidbody catRb = GetComponent<Rigidbody>();
+        float catSpeed = catRb != null
+            ? new Vector3(catRb.linearVelocity.x, 0f, catRb.linearVelocity.z).magnitude
+            : 0f;
+        float moveAmount = Mathf.Clamp01(catSpeed / 2.5f);
+        if (moveAmount > 0.02f)
+        {
+            walkBobPhase += Time.deltaTime * (5f + catSpeed * 2.2f);
+            float bobY = Mathf.Abs(Mathf.Sin(walkBobPhase)) * 0.035f * moveAmount;
+            float rollZ = Mathf.Sin(walkBobPhase) * 2.0f * moveAmount;
+            Vector3 bp = visualRoot.localPosition;
+            bp.y = visualBasePosition.y + bobY;
+            visualRoot.localPosition = bp;
+            visualRoot.localRotation = Quaternion.Euler(0f, 0f, rollZ);
+        }
+        else
+        {
+            Vector3 bp = visualRoot.localPosition;
+            bp.y = visualBasePosition.y;
+            visualRoot.localPosition = bp;
+            visualRoot.localRotation = Quaternion.identity;
         }
 
         if (Time.time < alertShakeUntil)

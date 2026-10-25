@@ -14,6 +14,29 @@ public sealed class CatContactShadow : MonoBehaviour
     private Sprite shadowSprite;
     private Texture2D shadowTexture;
     private Light sceneLight;
+    private Renderer[] decorativeGround;
+
+    // The thin rug is visual-only. Feet and shadow must agree with its visible
+    // surface without turning it into a new physical obstacle for the capsule.
+    public Vector3 VisibleGroundPoint(Vector3 physicalPoint)
+    {
+        if (decorativeGround == null)
+        {
+            GameObject rug = GameObject.Find("Large Cream Woven Rug");
+            decorativeGround = rug != null ? rug.GetComponentsInChildren<Renderer>() : System.Array.Empty<Renderer>();
+        }
+        Vector3 point = physicalPoint;
+        foreach (Renderer part in decorativeGround)
+        {
+            if (part == null || !part.enabled || !part.gameObject.activeInHierarchy) continue;
+            Bounds bounds = part.bounds;
+            if (point.x >= bounds.min.x && point.x <= bounds.max.x &&
+                point.z >= bounds.min.z && point.z <= bounds.max.z &&
+                bounds.max.y >= point.y && bounds.max.y - physicalPoint.y <= .08f)
+                point.y = bounds.max.y;
+        }
+        return point;
+    }
 
     private void Start()
     {
@@ -58,7 +81,8 @@ public sealed class CatContactShadow : MonoBehaviour
         if (projectionDirection.sqrMagnitude < 0.01f)
             projectionDirection = Vector3.forward;
 
-        shadowObject.transform.position = surface.point + Vector3.up * 0.006f +
+        Vector3 visibleSurface = VisibleGroundPoint(surface.point);
+        shadowObject.transform.position = visibleSurface + Vector3.up * 0.006f +
                                           projectionDirection * lightProjectionOffset;
         // The sprite plane's local Y is its long axis. Align it with the horizontal
         // projection of the directional light so the contact shadow agrees

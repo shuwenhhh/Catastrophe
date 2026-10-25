@@ -11,7 +11,7 @@ public static class CatastropheBuildCheck
     {
         try
         {
-            EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+            EditorSceneManager.OpenScene("Assets/LivingRoom.unity");
             GameBootstrap bootstrap = new GameObject("Catastrophe Validation").AddComponent<GameBootstrap>();
             MethodInfo awake = typeof(GameBootstrap).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic);
             awake?.Invoke(bootstrap, null);

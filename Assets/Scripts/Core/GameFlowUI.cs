@@ -3,12 +3,14 @@ using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 
 /// <summary>Owns the main menu, pause state and both end-of-run panels.</summary>
-public sealed class GameFlowUI : MonoBehaviour
+public sealed partial class GameFlowUI : MonoBehaviour
 {
-    public enum ScreenState { MainMenu, Playing, Paused, Victory, Failure }
+    public enum ScreenState { MainMenu, Playing, Paused, Results, Failure }
 
     private const string HighScoreKey = "Catastrophe.HighScore";
     private static bool autoStartNextLoad;
+    private bool runActive;
+    private float nextAutosave;
     public ScreenState State { get; private set; } = ScreenState.MainMenu;
     public static bool GameplayInputEnabled => FindAnyObjectByType<GameFlowUI>() is { State: ScreenState.Playing };
 
@@ -16,7 +18,10 @@ public sealed class GameFlowUI : MonoBehaviour
     private GUIStyle subtitleStyle;
     private GUIStyle bodyStyle;
     private GUIStyle buttonStyle;
-    private GUIStyle receiptStyle;
+    private GUIStyle resultTitleStyle;
+    private GUIStyle resultCaptionStyle;
+    private GUIStyle resultValueStyle;
+    private GUIStyle resultRowStyle;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics() => autoStartNextLoad = false;
@@ -25,7 +30,7 @@ public sealed class GameFlowUI : MonoBehaviour
     {
         if (GameManager.I != null)
         {
-            GameManager.I.OnLevelCompleted += ShowVictory;
+            GameManager.I.OnLevelCompleted += ShowCompletionResults;
             GameManager.I.OnLevelFailedEvent += ShowFailure;
         }
 
@@ -42,6 +47,10 @@ public sealed class GameFlowUI : MonoBehaviour
 
     private void Update()
     {
+        if (State == ScreenState.Playing && runActive && Time.unscaledTime >= nextAutosave)
+        {
+            GameSaveStore.Capture(); nextAutosave = Time.unscaledTime + 15f;
+        }
         if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame)
             return;
         if (State == ScreenState.Playing)
@@ -53,13 +62,24 @@ public sealed class GameFlowUI : MonoBehaviour
     public void BeginGame()
     {
         GameManager.I?.BeginRun();
+        OwnerAlert.I?.BeginRun();
+        runActive = true;
+        nextAutosave = Time.unscaledTime + 15f;
         SetState(ScreenState.Playing);
     }
 
     public void ResumeGame() => SetState(ScreenState.Playing);
 
+    public void TogglePause()
+    {
+        if (State == ScreenState.Playing) SetState(ScreenState.Paused);
+        else if (State == ScreenState.Paused) SetState(ScreenState.Playing);
+    }
+
     public void RestartGame()
     {
+        if (runActive) GameSaveStore.Archive("重新开始", GameManager.I.chaosScore, GameManager.I.ElapsedTime);
+        GameSaveStore.ClearResume(); runActive = false;
         autoStartNextLoad = true;
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
@@ -67,18 +87,35 @@ public sealed class GameFlowUI : MonoBehaviour
 
     public void ReturnToMainMenu()
     {
+        if (runActive) GameSaveStore.Capture();
+        runActive = false;
         autoStartNextLoad = false;
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     private void ShowMainMenu() => SetState(ScreenState.MainMenu);
-    private void ShowVictory() => SetState(ScreenState.Victory);
-    private void ShowFailure() => SetState(ScreenState.Failure);
+    private void ShowCompletionResults() { FinishRun("完成挑战"); SetState(ScreenState.Results); }
+    private void ShowFailure()
+    {
+        if (State == ScreenState.Failure) return;
+        FinishRun("被主人发现");
+        StartCaughtPresentation();
+        SetState(ScreenState.Failure);
+    }
+    private void FinishRun(string result)
+    {
+        if (runActive) GameSaveStore.Archive(result, GameManager.I.chaosScore, GameManager.I.ElapsedTime);
+        runActive = false; GameSaveStore.ClearResume();
+    }
+    private void OnApplicationPause(bool paused) { if (paused && runActive) GameSaveStore.Capture(); }
+    private void OnApplicationQuit() { if (runActive) GameSaveStore.Capture(); }
 
     private void SetState(ScreenState state)
     {
+        if (state == ScreenState.Paused && runActive) GameSaveStore.Capture();
         State = state;
+        if (coverCanvas) coverCanvas.enabled = state == ScreenState.MainMenu;
         Time.timeScale = state == ScreenState.Playing ? 1f : 0f;
         AudioListener.pause = state == ScreenState.Paused;
     }
@@ -89,6 +126,8 @@ public sealed class GameFlowUI : MonoBehaviour
             return;
 
         SetupStyles();
+        if (State == ScreenState.MainMenu) { DrawCoverMenu(); return; }
+        if (State == ScreenState.Failure && CaughtArtworkLoaded) { DrawCaughtScreen(); return; }
         float scale = Mathf.Clamp(Screen.height / 1080f, 0.75f, 2f);
         Matrix4x4 oldMatrix = GUI.matrix;
         GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
@@ -100,22 +139,11 @@ public sealed class GameFlowUI : MonoBehaviour
 
         switch (State)
         {
-            case ScreenState.MainMenu: DrawMainMenu(width, height); break;
             case ScreenState.Paused: DrawPause(width, height); break;
-            case ScreenState.Victory: DrawVictory(width, height); break;
+            case ScreenState.Results: DrawCompletionResults(width, height); break;
             case ScreenState.Failure: DrawFailure(width, height); break;
         }
         GUI.matrix = oldMatrix;
-    }
-
-    private void DrawMainMenu(float width, float height)
-    {
-        GUI.Label(new Rect(0f, height * 0.15f, width, 90f), "CATASTROPHE!", titleStyle);
-        GUI.Label(new Rect(0f, height * 0.15f + 78f, width, 48f), "《猫咪大破坏》", subtitleStyle);
-        DrawCatLogo(new Rect(width * 0.5f - 85f, height * 0.36f - 80f, 170f, 150f));
-        if (WarmButton(new Rect(width * 0.5f - 150f, height * 0.58f, 300f, 58f), "开始游戏")) BeginGame();
-        GUI.Label(new Rect(0f, height * 0.70f, width, 36f), "WASD 移动  ·  空格跳跃  ·  E 推 / 躲藏", bodyStyle);
-        GUI.Label(new Rect(0f, height * 0.76f, width, 36f), $"历史最高  {PlayerPrefs.GetInt(HighScoreKey, 0)}", bodyStyle);
     }
 
     private void DrawPause(float width, float height)
@@ -126,28 +154,94 @@ public sealed class GameFlowUI : MonoBehaviour
         if (WarmButton(new Rect(panel.x + 80f, panel.y + 225f, panel.width - 160f, 48f), "返回主菜单")) ReturnToMainMenu();
     }
 
-    private void DrawVictory(float width, float height)
+    private void DrawCompletionResults(float width, float height)
     {
-        Rect paper = new Rect(width * 0.5f - 265f, 75f, 530f, height - 150f);
-        GUI.color = new Color(1f, 0.94f, 0.79f);
-        GUI.Box(paper, GUIContent.none);
+        // Match the caught screen and title screen: sage backdrop, cream paper,
+        // cocoa outlines, rounded controls and warm yellow accents.
+        Rect safe = new Rect(Screen.safeArea.x / GUI.matrix.m00,
+            (Screen.height - Screen.safeArea.yMax) / GUI.matrix.m11,
+            Screen.safeArea.width / GUI.matrix.m00, Screen.safeArea.height / GUI.matrix.m11);
+        float panelHeight = Mathf.Min(790f, safe.height - 36f);
+        float panelWidth = Mathf.Min(610f, safe.width - 36f);
+        Rect panel = new Rect(safe.center.x - panelWidth * .5f, safe.center.y - panelHeight * .5f, panelWidth, panelHeight);
         GUI.color = Color.white;
-        GUI.Label(new Rect(paper.x + 20f, paper.y + 22f, paper.width - 40f, 54f), "破坏账单", titleStyle);
-        float y = paper.y + 92f;
+        CaughtTile(new Rect(0, 0, width, height), new Color(.67f,.75f,.58f), 0);
+        DrawResultPaws(width, height, panel);
+        CaughtTile(panel, new Color(.30f,.16f,.08f), 42f);
+        Rect paper = Inset(panel, 5f);
+        CaughtTile(paper, new Color(1f,.98f,.93f), 37f);
+
+        SetupResultStyles(panel.height / 790f);
+        SetupCaughtStyles(panel.height / 790f);
+        GUI.Label(new Rect(panel.x + 30f, panel.y + 24f, panel.width - 60f, 55f), "DAMAGE RECEIPT", resultTitleStyle);
+        GUI.Label(new Rect(panel.x + 44f, panel.y + 82f, panel.width - 88f, 30f), "TODAY'S LITTLE CATASTROPHE", resultCaptionStyle);
+
+        Rect list = new Rect(panel.x + 38f, panel.y + 126f, panel.width - 76f, panel.height * .47f);
+        CaughtTile(list, new Color(1f,.82f,.45f), 27f);
+        CaughtTile(Inset(list, 4f), new Color(1f,.95f,.80f), 23f);
+        float rowY = list.y + 15f;
+        int shown = 0;
         if (GameManager.I != null)
         {
             foreach (GameManager.ChaosEntry entry in GameManager.I.Receipt)
             {
-                GUI.Label(new Rect(paper.x + 46f, y, paper.width - 92f, 28f),
-                    $"{entry.itemName}    ¥{entry.points * 100:N0}", receiptStyle);
-                y += 29f;
-                if (y > paper.yMax - 205f) break;
+                if (rowY + 34f > list.yMax - 10f) break;
+                string dots = new string('·', Mathf.Clamp(24 - entry.itemName.Length, 4, 24));
+                GUI.Label(new Rect(list.x + 24f, rowY, list.width - 48f, 32f),
+                    $"{entry.itemName}  {dots}  ¥{entry.points * 100:N0}", resultRowStyle);
+                rowY += 36f; shown++;
             }
-            GUI.Label(new Rect(paper.x + 35f, paper.yMax - 185f, paper.width - 70f, 70f),
-                $"TOTAL CHAOS  {GameManager.I.chaosScore}\nRANK  {GameManager.I.Grade}    历史最高  {GameManager.I.HighScore}", receiptStyle);
+            if (shown < GameManager.I.Receipt.Count)
+                GUI.Label(new Rect(list.x + 24f, list.yMax - 38f, list.width - 48f, 28f),
+                    $"+ {GameManager.I.Receipt.Count - shown} more", resultCaptionStyle);
         }
-        if (WarmButton(new Rect(paper.x + 38f, paper.yMax - 92f, 210f, 48f), "再来一局")) RestartGame();
-        if (WarmButton(new Rect(paper.xMax - 248f, paper.yMax - 92f, 210f, 48f), "返回主菜单")) ReturnToMainMenu();
+
+        float statsY = list.yMax + 18f;
+        float gap = 14f, statWidth = (list.width - gap) * .5f;
+        Rect items = new Rect(list.x, statsY, statWidth, 104f);
+        Rect damage = new Rect(items.xMax + gap, statsY, statWidth, 104f);
+        DrawResultStat(items, "ITEMS BROKEN", GameManager.I != null ? GameManager.I.Receipt.Count.ToString() : "0");
+        DrawResultStat(damage, "TOTAL DAMAGE", GameManager.I != null ? $"¥{GameManager.I.DamageAmount:N0}" : "¥0");
+
+        Rect again = new Rect(panel.x + 38f, panel.yMax - 88f, (panel.width - 90f) * .61f, 58f);
+        Rect home = new Rect(again.xMax + 14f, again.y, panel.xMax - 38f - again.xMax - 14f, 58f);
+        if (DrawCaughtButton(again, "PLAY AGAIN", new Color(.52f,.65f,.43f), Color.white)) RestartGame();
+        if (DrawCaughtButton(home, "HOME", new Color(1f,.97f,.88f), new Color(.30f,.16f,.08f))) ReturnToMainMenu();
+    }
+
+    private void SetupResultStyles(float factor)
+    {
+        Color cocoa = new Color(.30f,.16f,.08f);
+        resultTitleStyle ??= new GUIStyle(GUI.skin.label) { alignment=TextAnchor.MiddleCenter, fontStyle=FontStyle.Bold };
+        resultCaptionStyle ??= new GUIStyle(resultTitleStyle);
+        resultValueStyle ??= new GUIStyle(resultTitleStyle);
+        resultRowStyle ??= new GUIStyle(GUI.skin.label) { alignment=TextAnchor.MiddleLeft, fontStyle=FontStyle.Bold };
+        resultTitleStyle.fontSize=Mathf.RoundToInt(40f*factor);
+        resultCaptionStyle.fontSize=Mathf.RoundToInt(16f*factor);
+        resultValueStyle.fontSize=Mathf.RoundToInt(34f*factor);
+        resultRowStyle.fontSize=Mathf.RoundToInt(18f*factor);
+        SetCaughtInk(resultTitleStyle,cocoa);SetCaughtInk(resultCaptionStyle,new Color(.56f,.34f,.20f));
+        SetCaughtInk(resultValueStyle,cocoa);SetCaughtInk(resultRowStyle,cocoa);
+    }
+
+    private void DrawResultStat(Rect rect, string caption, string value)
+    {
+        CaughtTile(rect,new Color(1f,.82f,.45f),24f);
+        CaughtTile(Inset(rect,4f),new Color(1f,.95f,.80f),20f);
+        GUI.Label(new Rect(rect.x+8f,rect.y+7f,rect.width-16f,30f),caption,resultCaptionStyle);
+        int original=resultValueStyle.fontSize;
+        while(resultValueStyle.fontSize>16&&resultValueStyle.CalcSize(new GUIContent(value)).x>rect.width-18f)resultValueStyle.fontSize--;
+        GUI.Label(new Rect(rect.x+8f,rect.y+34f,rect.width-16f,62f),value,resultValueStyle);
+        resultValueStyle.fontSize=original;
+    }
+
+    private static void DrawResultPaws(float width,float height,Rect panel)
+    {
+        for(int side=0;side<2;side++)for(int row=0;row<4;row++)
+        {
+            float x=side==0?panel.x*(.35f+(row%2)*.22f):panel.xMax+(width-panel.xMax)*(.42f+(row%2)*.20f);
+            DrawCaughtPaw(new Vector2(x,height*(.16f+row*.22f)),38f+row%2*10f);
+        }
     }
 
     private void DrawFailure(float width, float height)
@@ -171,34 +265,22 @@ public sealed class GameFlowUI : MonoBehaviour
 
     private bool WarmButton(Rect rect, string text) => GUI.Button(rect, text, buttonStyle);
 
-    private static void DrawCatLogo(Rect rect)
-    {
-        Color old = GUI.color;
-        GUI.color = new Color(0.03f, 0.035f, 0.045f);
-        GUI.DrawTexture(new Rect(rect.x + 25f, rect.y + 20f, 120f, 110f), Texture2D.whiteTexture);
-        GUI.color = Color.white;
-        GUI.DrawTexture(new Rect(rect.x + 49f, rect.y + 65f, 72f, 48f), Texture2D.whiteTexture);
-        GUI.color = new Color(1f, 0.45f, 0.56f);
-        GUI.DrawTexture(new Rect(rect.x + 78f, rect.y + 91f, 14f, 9f), Texture2D.whiteTexture);
-        GUI.color = old;
-    }
-
     private void SetupStyles()
     {
         titleStyle ??= new GUIStyle(GUI.skin.label) { fontSize = 46, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(1f, 0.78f, 0.30f) } };
         subtitleStyle ??= new GUIStyle(titleStyle) { fontSize = 26, normal = { textColor = Color.white } };
         bodyStyle ??= new GUIStyle(subtitleStyle) { fontSize = 20 };
-        receiptStyle ??= new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleLeft, normal = { textColor = new Color(0.18f, 0.10f, 0.07f) } };
         buttonStyle ??= new GUIStyle(GUI.skin.button) { fontSize = 22, fontStyle = FontStyle.Bold, normal = { textColor = Color.white }, hover = { textColor = new Color(1f, 0.86f, 0.42f) } };
     }
 
     private void OnDestroy()
     {
+        ReleaseCaughtArtwork();
         Time.timeScale = 1f;
         AudioListener.pause = false;
         if (GameManager.I != null)
         {
-            GameManager.I.OnLevelCompleted -= ShowVictory;
+            GameManager.I.OnLevelCompleted -= ShowCompletionResults;
             GameManager.I.OnLevelFailedEvent -= ShowFailure;
         }
     }

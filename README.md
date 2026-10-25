@@ -1,5 +1,7 @@
 # Catastrophe
 
+![Catastrophe game cover](Documentation/Images/catastrophe-game-cover.png)
+
 Catastrophe is a Unity prototype about a tiny tuxedo kitten making a very large
 mess in a warm living room. The goal is to complete four mischief targets by
 pushing valuable objects, building chaos, and hiding before the owner catches

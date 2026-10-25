@@ -120,7 +120,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScoreItem
   points: 35
   displayName: Pothos Plant
-  noise: 30
+  noise: 22.75
+  weight: 2
 --- !u!1001 &6249855954395056476
 PrefabInstance:
   m_ObjectHideFlags: 0

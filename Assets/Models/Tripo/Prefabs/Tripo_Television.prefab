@@ -120,7 +120,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScoreItem
   points: 80
   displayName: Television
-  noise: 30
+  noise: 45
+  weight: 3
 --- !u!1001 &5908980837462550423
 PrefabInstance:
   m_ObjectHideFlags: 0

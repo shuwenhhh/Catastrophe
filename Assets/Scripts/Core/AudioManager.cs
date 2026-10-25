@@ -14,6 +14,13 @@ public sealed class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip hideSuccess;
     [SerializeField] private AudioClip footstep;
     [SerializeField] private AudioClip landing;
+    [SerializeField] private AudioClip countdownTick;
+    [SerializeField] private AudioSource backgroundMusic;
+    [SerializeField, Range(0f, 1f)] private float inspectionMusicLevel = .25f;
+    private float musicBaseVolume;
+    private bool inspectionMix;
+    public bool HasCountdownClip => countdownTick != null;
+    public bool InspectionMixActive => inspectionMix;
 
     [Header("Mix")]
     [SerializeField, Range(0f, 1f)] private float effectsVolume = 0.75f;
@@ -49,11 +56,28 @@ public sealed class AudioManager : MonoBehaviour
         worldSource.maxDistance = 8f;
         worldSource.dopplerLevel = 0f;
         CreatePlaceholderClips();
+        if (backgroundMusic) musicBaseVolume = backgroundMusic.volume;
     }
 
-    public void PlayItemThud() => Play(itemThud, 0.78f, Random.Range(0.92f, 1.06f));
-    public void PlayFragileBreak() => Play(fragileBreak, 0.90f, Random.Range(0.96f, 1.05f));
-    public void PlayPawPush() => Play(pawPush, 0.62f, Random.Range(0.96f, 1.08f));
+    // Optional music can be assigned without ducking unrelated effects.
+    public void SetBackgroundMusic(AudioSource music)
+    {
+        if (backgroundMusic) backgroundMusic.volume = musicBaseVolume;
+        backgroundMusic = music;
+        if (music) musicBaseVolume = music.volume;
+    }
+    public void SetInspectionMix(bool inspecting) => inspectionMix = inspecting;
+    public void PlayCountdownTick() => Play(countdownTick, .22f, 1f);
+    private void Update()
+    {
+        if (backgroundMusic)
+            backgroundMusic.volume = Mathf.MoveTowards(backgroundMusic.volume,
+                musicBaseVolume * (inspectionMix ? inspectionMusicLevel : 1f), Time.unscaledDeltaTime * 1.5f);
+    }
+
+    public void PlayItemThud() => Play(itemThud, 0.62f, Random.Range(0.97f, 1.03f));
+    public void PlayFragileBreak() => Play(fragileBreak, 0.58f, Random.Range(0.98f, 1.02f));
+    public void PlayPawPush() => Play(pawPush, 0.56f, 1f);
     public void PlayOwnerAlert() => Play(ownerAlert, 0.88f, 1f);
     public void PlayHideSuccess() => Play(hideSuccess, 0.76f, 1f);
 
@@ -96,20 +120,15 @@ public sealed class AudioManager : MonoBehaviour
 
     private void CreatePlaceholderClips()
     {
-        itemThud ??= CreateClip("Placeholder - item thud", 0.34f, (time, random) =>
+        if(!itemThud)itemThud=CozyCatSoundDesign.LoadOrCreate(CozyCatSoundDesign.Effect.ItemDrop);
+        if(!fragileBreak)fragileBreak=CozyCatSoundDesign.LoadOrCreate(CozyCatSoundDesign.Effect.PorcelainDrop);
+        if(!pawPush)pawPush=CozyCatSoundDesign.LoadOrCreate(CozyCatSoundDesign.Effect.PawPush);
+        countdownTick ??= CreateClip("Soft countdown pluck", .22f, (time, random) =>
         {
-            float envelope = Mathf.Exp(-time * 12f);
-            return (Mathf.Sin(time * 2f * Mathf.PI * 82f) * 0.62f + random * 0.25f) * envelope;
+            float attack = Mathf.Clamp01(time / .012f);
+            float release = Mathf.Clamp01((.22f - time) / .025f);
+            return Mathf.Sin(time * 2f * Mathf.PI * 660f) * Mathf.Exp(-time * 22f) * attack * release * .25f;
         });
-        fragileBreak ??= CreateClip("Placeholder - fragile break", 0.52f, (time, random) =>
-        {
-            float envelope = Mathf.Exp(-time * 8f);
-            float chime = Mathf.Sin(time * 2f * Mathf.PI * 2100f) * 0.28f +
-                          Mathf.Sin(time * 2f * Mathf.PI * 3250f) * 0.18f;
-            return (random * 0.58f + chime) * envelope;
-        });
-        pawPush ??= CreateClip("Placeholder - paw push", 0.11f, (time, random) =>
-            (random * 0.38f + Mathf.Sin(time * 2f * Mathf.PI * 260f) * 0.42f) * Mathf.Exp(-time * 30f));
         ownerAlert ??= CreateClip("Placeholder - owner alert", 0.72f, (time, random) =>
         {
             float frequency = time < 0.34f ? 620f : 820f;
@@ -158,6 +177,7 @@ public sealed class AudioManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (backgroundMusic) backgroundMusic.volume = musicBaseVolume;
         if (I == this)
             I = null;
     }

@@ -1,0 +1,14 @@
+# CATASTROPHE! 房间布局配置
+# 格式: 物体名 | x | z | 朝向(度) | y(可选, 默认0)
+# 以 # 开头的行是注释，会被忽略
+# 改完这个文件后，在 Unity 点 CATASTROPHE -> Apply Room Layout 即可生效
+#
+# 坐标系: x 左右(-左/+右), z 前后(-前/+后), 朝向 0=朝+z(后), 90=朝+x(右), 180=朝-z(前), 270=朝-x(左)
+
+Tripo Sofa | -2.0 | 3.2 | 180
+Tripo Hide Cardboard | -3.8 | 2.6 | 0
+Tripo Shelving Unit | -4.5 | 0.5 | 90
+Door | -4.5 | -1.8 | 90
+Tripo Tv Cabinet | -2.0 | -3.2 | 0
+Tripo Television | -2.0 | -3.15 | 0 | 0.65
+Tripo Curtain | 1.5 | 3.4 | 180

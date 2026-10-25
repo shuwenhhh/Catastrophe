@@ -12,10 +12,15 @@ SPECS = {
     "cat-tree": ("height", 1.80),
     "chair": ("height", 0.88),
     "cup": ("height", 0.10),
+    "desktop-globe": ("height", 0.34),
     "floor": ("max", 14.0),
     "flower-vase": ("height", 0.48),
+    "hide-cardboard-box": ("height", 0.55),
     "laptop": ("max", 0.58),
+    "linen-curtain": ("height", 2.55),
+    "lucky-cat": ("height", 0.34),
     "mug": ("height", 0.11),
+    "navy-sideboard": ("height", 0.64),
     "pothos-plant": ("height", 0.48),
     "shelving-unit": ("height", 3.10),
     "sofa": ("height", 0.92),
@@ -24,6 +29,14 @@ SPECS = {
     "tablet": ("max", 0.34),
     "television": ("height", 0.82),
     "tv-cabinet": ("height", 0.92),
+}
+
+ASSET_NAMES = {
+    "linen-curtain": "Tripo_Curtain",
+    "navy-sideboard": "Tripo_NavySideboard",
+    "hide-cardboard-box": "Tripo_HideCardboard",
+    "desktop-globe": "Tripo_DesktopGlobe",
+    "lucky-cat": "Tripo_LuckyCat",
 }
 
 def world_bounds(objects):
@@ -63,7 +76,7 @@ def convert(slug, mode, target):
             obj.location.z += offset[2]
     bpy.context.view_layer.update()
     os.makedirs(OUTPUT, exist_ok=True)
-    asset_name = "Tripo_" + slug.replace("-", "_").title().replace("_", "")
+    asset_name = ASSET_NAMES.get(slug, "Tripo_" + slug.replace("-", "_").title().replace("_", ""))
     texture_dir = os.path.join(OUTPUT, "Textures", asset_name)
     if os.path.isdir(texture_dir):
         shutil.rmtree(texture_dir)
@@ -94,5 +107,7 @@ def convert(slug, mode, target):
     )
     print(f"CONVERTED {slug}: scale={scale:.6f} -> {out}")
 
-for slug, (mode, target) in SPECS.items():
+requested = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else list(SPECS.keys())
+for slug in requested:
+    mode, target = SPECS[slug]
     convert(slug, mode, target)

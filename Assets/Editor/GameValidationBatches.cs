@@ -11,9 +11,9 @@ using UnityEngine;
 public static class GameValidationBatches
 {
     private const string ScenePath = "Assets/LivingRoom.unity";
-    private const string CatPrefabPath = "Assets/Resources/Cat/CatSprite.prefab";
-    private const string CatControllerPath = "Assets/Art/Cat/CatSprite.controller";
-    private const string SmoothSpriteFolder = "Assets/Art/TuxedoKitten/GeneratedSmoothSprites";
+    private const string CatPrefabPath = "Assets/Resources/SmoothKitten3D/SmoothKitten3D.prefab";
+    private const string CatControllerPath = "Assets/Art/SmoothKitten3D/SmoothKitten3D.controller";
+    private const string CatFbxPath = "Assets/Art/SmoothKitten3D/LongStride/SmoothKitten3D_LongStride.fbx";
     private const string TripoFbxFolder = "Assets/Models/Tripo/FBX";
 
     public static void Batch01() => Execute(1);
@@ -36,6 +36,77 @@ public static class GameValidationBatches
     public static void Batch18() => Execute(18);
     public static void Batch19() => Execute(19);
     public static void Batch20() => Execute(20);
+    public static void Batch21() => Execute(21);
+    public static void Batch22() => Execute(22);
+    public static void Batch23() => Execute(23);
+    public static void Batch24() => Execute(24);
+    public static void Batch25() => Execute(25);
+    public static void Batch26() => Execute(26);
+    public static void Batch27() => Execute(27);
+    public static void Batch28() => Execute(28);
+    public static void Batch29() => Execute(29);
+    public static void Batch30() => Execute(30);
+
+    public static void LogLivingRoomLayout()
+    {
+        OpenRoom();
+        foreach (string name in new[] {
+            "Tripo Shelving Unit", "Shelf Mug 01", "Shelf Books 02", "Shelf Plant 02",
+            "Tripo Table Lamp", "Tripo Television", "Pink Vase", "Tripo Cat Tree",
+            "Table", "Sofa", "Chair 01", "Tripo Navy Sideboard", "Tripo Curtain",
+            "Tripo Hide Cardboard", "Desktop Globe", "Lucky Cat"
+        })
+        {
+            GameObject obj = RequireObject(name);
+            Bounds b = BoundsOf(obj);
+            Debug.Log($"LAYOUT {name} pos={obj.transform.position} min={b.min} max={b.max} size={b.size}");
+        }
+    }
+
+    public static void LogWallAndWindowMaterials()
+    {
+        OpenRoom();
+        Renderer[] renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+        Bounds? backWall = null;
+        List<Bounds> shellWallBounds = new();
+        foreach (Renderer renderer in renderers.OrderBy(r => r.name))
+        {
+            string hierarchy = HierarchyPath(renderer.transform);
+            bool relevant = hierarchy.Contains("Wall", StringComparison.OrdinalIgnoreCase) ||
+                            hierarchy.Contains("Window", StringComparison.OrdinalIgnoreCase) ||
+                            hierarchy.Contains("Curtain", StringComparison.OrdinalIgnoreCase) ||
+                            hierarchy.Contains("skirting", StringComparison.OrdinalIgnoreCase) ||
+                            hierarchy.Contains("frame", StringComparison.OrdinalIgnoreCase);
+            if (!relevant) continue;
+
+            Bounds bounds = renderer.bounds;
+            if (renderer.name == "Back Wall") backWall = bounds;
+            if (hierarchy.Contains("Four Wall Room Shell", StringComparison.Ordinal) &&
+                hierarchy.Contains("Wall", StringComparison.OrdinalIgnoreCase))
+                shellWallBounds.Add(bounds);
+
+            foreach (Material material in renderer.sharedMaterials)
+            {
+                Color color = MaterialColor(material);
+                bool suspicious = IsMagentaLike(color) ||
+                                  material == null ||
+                                  material.shader == null ||
+                                  material.shader.name.Contains("InternalErrorShader", StringComparison.OrdinalIgnoreCase);
+                Debug.Log($"WALL_AUDIT name={hierarchy} boundsMin={bounds.min} boundsMax={bounds.max} " +
+                          $"mat={(material == null ? "null" : material.name)} shader={(material?.shader == null ? "null" : material.shader.name)} " +
+                          $"color={color} suspicious={suspicious}");
+            }
+        }
+
+        if (backWall.HasValue)
+        {
+            foreach (Bounds shellBounds in shellWallBounds)
+            {
+                bool overlap = backWall.Value.Intersects(shellBounds);
+                Debug.Log($"WALL_OVERLAP BackWall_vs_Shell overlap={overlap} back={backWall.Value} shell={shellBounds}");
+            }
+        }
+    }
 
     [MenuItem("Catastrophe/Run Validation Batch 10")]
     public static void RunAllInEditor()
@@ -68,6 +139,25 @@ public static class GameValidationBatches
         }
     }
 
+    [MenuItem("Catastrophe/Reference Room/Run Batches 21-30")]
+    public static void RunReferenceRoomBatchesInEditor()
+    {
+        try
+        {
+            for (int number = 21; number <= 29; number++)
+            {
+                Run(number);
+                Debug.Log($"REFERENCE_ROOM_BATCH_{number:00}_PASSED");
+            }
+            Debug.Log("REFERENCE_ROOM_BATCH_30_PASSED");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"REFERENCE_ROOM_BATCH_FAILED: {exception.Message}");
+            Debug.LogException(exception);
+        }
+    }
+
     private static void Execute(int number)
     {
         try
@@ -80,6 +170,10 @@ public static class GameValidationBatches
             {
                 TripoBatchImporter.FixAllMaterials();
                 for (int i = 1; i <= 19; i++) Run(i);
+            }
+            else if (number == 30)
+            {
+                for (int i = 21; i <= 29; i++) Run(i);
             }
             else Run(number);
 
@@ -117,6 +211,16 @@ public static class GameValidationBatches
             case 17: ValidateJuiceAndCutePass(); break;
             case 18: ValidateIndependentSceneArt(); break;
             case 19: ValidatePresentationAndCamera(); break;
+            case 21: ValidateReferencePalette(); break;
+            case 22: ValidateReferenceFloor(); break;
+            case 23: ValidateCompactRoom(); break;
+            case 24: ValidateReferenceSofa(); break;
+            case 25: ValidateReferenceTvZone(); break;
+            case 26: ValidateClimbableDisplayShelf(); break;
+            case 27: ValidateReferenceCatTree(); break;
+            case 28: ValidateReferenceDiningCluster(); break;
+            case 29: ValidateReferenceLayoutPolish(); break;
+            case 30: for (int i = 21; i <= 29; i++) Run(i); break;
             default: throw new ArgumentOutOfRangeException(nameof(number));
         }
     }
@@ -180,7 +284,8 @@ public static class GameValidationBatches
         foreach (Valuable valuable in valuables)
         {
             Rigidbody body = valuable.GetComponent<Rigidbody>();
-            Require(body != null && body.mass >= 1f && body.mass <= 3f,
+            float minMass = valuable.name is "Desktop Globe" or "Lucky Cat" ? 0.40f : 1f;
+            Require(body != null && body.mass >= minMass && body.mass <= 3f,
                 $"{valuable.name} nudge physics is not delivery-safe.");
         }
         for (int left = 0; left < valuables.Length; left++)
@@ -204,10 +309,9 @@ public static class GameValidationBatches
     {
         Require(typeof(ChaosJuiceUI).GetMethod("OnGUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance) != null,
             "Destruction/noise juice UI is missing.");
-        Require(File.Exists($"{SmoothSpriteFolder}/Smooth_Walk_Side_6Frames.png") &&
-                File.Exists($"{SmoothSpriteFolder}/Smooth_Jump_Side_6Frames.png") &&
-                File.Exists($"{SmoothSpriteFolder}/Smooth_GentleLeftPawPush_4Frames.png"),
-            "Smooth tuxedo-kitten movement sheets are missing.");
+        Require(File.Exists(CatFbxPath) && File.Exists(CatPrefabPath) &&
+                File.Exists("Assets/Art/SmoothKitten3D/SmoothKitten3D_BaseColor.png"),
+            "The skinned 3D kitten or its appearance texture is missing.");
     }
 
     private static void ValidateIndependentSceneArt()
@@ -223,7 +327,7 @@ public static class GameValidationBatches
 
         string prefabFolder = "Assets/Models/Tripo/Prefabs";
         string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { prefabFolder });
-        Require(prefabGuids.Length == 16, $"Expected 16 Tripo prefabs, found {prefabGuids.Length}.");
+        Require(prefabGuids.Length == 21, $"Expected 21 Tripo prefabs, found {prefabGuids.Length}.");
         foreach (string guid in prefabGuids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -291,39 +395,24 @@ public static class GameValidationBatches
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CatPrefabPath);
         Require(prefab != null, "Cat prefab is missing.");
         Require(prefab.GetComponentInChildren<Animator>() != null, "Cat prefab has no Animator.");
-        Require(prefab.GetComponentInChildren<SpriteRenderer>() != null, "Cat prefab has no SpriteRenderer.");
-        Require(prefab.GetComponentInChildren<BillboardSprite>() != null,
-            "Cat sprite must stay camera-facing in the 3D room.");
+        Require(prefab.GetComponentInChildren<SkinnedMeshRenderer>() != null,
+            "Cat prefab has no skinned 3D mesh.");
+        Require(prefab.GetComponentInChildren<SpriteRenderer>() == null,
+            "The retired billboard sprite is still present in the cat prefab.");
     }
 
     private static void ValidateAnimations()
     {
-        RuntimeAnimatorController controller =
-            AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(CatControllerPath);
-        Require(controller != null, "Cat sprite Animator Controller is missing.");
-        AnimationClip[] clips = controller.animationClips;
-        string[] required = {
-            "Cat_Idle", "Cat_Idle_Front", "Cat_Idle_Back",
-            "Cat_Walk", "Cat_Walk_Front", "Cat_Walk_Back",
-            "Cat_Jump_Side", "Cat_Jump_Front", "Cat_Jump_Back", "Cat_Push_Side"
-        };
+        RuntimeAnimatorController controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(CatControllerPath);
+        Require(controller != null, "3D cat Animator Controller is missing.");
+        AnimationClip[] clips = AssetDatabase.LoadAllAssetsAtPath(CatFbxPath)
+            .OfType<AnimationClip>()
+            .Where(clip => !clip.name.StartsWith("__preview__", StringComparison.Ordinal))
+            .ToArray();
+        string[] required = { "Cat_Idle", "Cat_Walk", "Cat_Jump", "Cat_Push_Right" };
         foreach (string name in required)
-            Require(clips.Any(c => c.name == name), $"Animation {name} is missing.");
+            Require(clips.Any(c => c.name.EndsWith(name, StringComparison.Ordinal)), $"Animation {name} is missing.");
         Require(clips.All(c => c.length > 0.05f), "One or more animation clips are empty.");
-
-        string[] sheets = {
-            "Smooth_Walk_Side_6Frames.png", "Smooth_Walk_TowardCamera_6Frames.png",
-            "Smooth_Walk_Away_Back_6Frames.png", "Smooth_Jump_Side_6Frames.png",
-            "Smooth_Jump_TowardCamera_6Frames.png", "Smooth_Jump_Away_Back_6Frames.png",
-            "Smooth_GentleLeftPawPush_4Frames.png"
-        };
-        foreach (string sheet in sheets)
-        {
-            int expected = sheet.Contains("4Frames", StringComparison.Ordinal) ? 4 : 6;
-            int actual = AssetDatabase.LoadAllAssetsAtPath($"{SmoothSpriteFolder}/{sheet}")
-                .OfType<Sprite>().Count();
-            Require(actual == expected, $"{sheet} has {actual} frames; expected {expected}.");
-        }
     }
 
     private static void ValidateCatGameplay()
@@ -384,21 +473,42 @@ public static class GameValidationBatches
 
         GameObject shell = RequireObject("Four Wall Room Shell (editable)");
         foreach (Renderer renderer in shell.GetComponentsInChildren<Renderer>(true))
-        foreach (Material material in renderer.sharedMaterials)
+        {
+            foreach (Material material in renderer.sharedMaterials)
+            {
             Require(material != null && material.shader != null &&
                     !material.shader.name.Contains("InternalErrorShader", StringComparison.OrdinalIgnoreCase),
                 $"Room shell has a missing/pink material on {renderer.name}.");
+            Require(!IsMagentaLike(MaterialColor(material)),
+                $"Room shell still has a magenta-like material on {renderer.name}: {MaterialColor(material)}.");
+            if (renderer.name.Contains("Wall", StringComparison.OrdinalIgnoreCase))
+                Require(Mathf.Abs(MaterialColor(material).r - 0.91f) < 0.04f &&
+                        Mathf.Abs(MaterialColor(material).g - 0.84f) < 0.04f,
+                    $"Wall material is not the unified warm wall colour on {renderer.name}: {MaterialColor(material)}.");
+            if (renderer.name.Contains("Curtain", StringComparison.OrdinalIgnoreCase))
+                Require(!renderer.sharedMaterials.Any(m => IsMagentaLike(MaterialColor(m))),
+                    $"Window curtain has a magenta-like material on {renderer.name}.");
+            }
+        }
     }
 
     private static void ValidateFurnitureLayout()
     {
         OpenRoom();
-        string[] names = { "Sofa", "Table", "Chair 01", "Chair 02", "Chair 03", "MacBook", "iPad", "Cup" };
+        string[] names = {
+            "Sofa", "Table", "Chair 01", "Chair 02", "Chair 03", "MacBook", "iPad", "Cup",
+            "Tripo Shelving Unit", "Tripo Tv Cabinet", "Tripo Television", "Tripo Table Lamp",
+            "Tripo Navy Sideboard", "Tripo Curtain", "Tripo Hide Cardboard",
+            "Pink Vase", "Tripo Cat Tree", "Shelf Mug 01", "Shelf Books 02", "Shelf Plant 02",
+            "Desktop Globe", "Lucky Cat"
+        };
         foreach (string name in names) RequireObject(name);
-        foreach (string omitted in new[] { "Floor Lamp", "TV Cabinet", "Television", "Flower Vase", "Wall Decorations" })
+        foreach (string omitted in new[] { "Floor Lamp", "TV Cabinet", "Flower Vase", "Wall Decorations" })
             Require(GameObject.Find(omitted) == null, $"Unattached extra object must not be generated: {omitted}.");
-        Require(RequireObject("Sofa").transform.position.x < 0f, "Sofa should be in the left living zone.");
-        Require(RequireObject("Table").transform.position.x > 0f, "Table should be in the right dining zone.");
+        Require(RequireObject("Sofa").transform.position.x < -3f && RequireObject("Sofa").transform.position.z > 2f,
+            "Sofa should be against the back-left wall.");
+        Require(RequireObject("Table").transform.position.x > 0f && Mathf.Abs(RequireObject("Table").transform.position.z) < 1f,
+            "Dining table should stay centered and near the window side of the room.");
         Require(RequireObject("MacBook").transform.parent == RequireObject("Table").transform.parent,
             "Desktop objects and table should remain independently movable siblings.");
 
@@ -408,12 +518,34 @@ public static class GameValidationBatches
         Bounds laptop = BoundsOf(RequireObject("MacBook"));
         Bounds tablet = BoundsOf(RequireObject("iPad"));
         Bounds cup = BoundsOf(RequireObject("Cup"));
-        foreach (string groundedName in new[] { "Sofa", "Table", "Chair 01", "Chair 02", "Chair 03" })
+        foreach (string groundedName in new[] { "Sofa", "Table", "Chair 01", "Chair 02", "Chair 03", "Tripo Shelving Unit", "Tripo Tv Cabinet", "Tripo Cat Tree" })
         {
             Bounds grounded = BoundsOf(RequireObject(groundedName));
             Require(grounded.min.y >= -0.025f && grounded.min.y <= 0.035f,
                 $"{groundedName} is sunk below or floating above the floor: min.y={grounded.min.y:F3}.");
         }
+        Require(BoundsOf(RequireObject("Tripo Shelving Unit")).max.y < 3.2f,
+            "Shelving unit must not be up near the ceiling.");
+        foreach (string shelfProp in new[] { "Shelf Mug 01", "Shelf Books 02", "Shelf Plant 02", "Desktop Globe", "Lucky Cat" })
+        {
+            Bounds prop = BoundsOf(RequireObject(shelfProp));
+            Require(prop.min.y >= 0.45f && prop.min.y <= 1.75f && Mathf.Abs(prop.center.z - 3.30f) <= 0.45f,
+                $"{shelfProp} must sit on the shelving unit boards, not float away: min.y={prop.min.y:F2}, z={prop.center.z:F2}.");
+        }
+        Require(Mathf.Abs(BoundsOf(RequireObject("Tripo Table Lamp")).center.y - 0.87f) <= 0.08f,
+            "Table lamp must sit on the TV cabinet top.");
+        Require(Mathf.Abs(BoundsOf(RequireObject("Tripo Navy Sideboard")).center.y - 0.32f) <= 0.06f,
+            "Navy sideboard must use the measured placement.");
+        Require(BoundsOf(RequireObject("Tripo Television")).center.y >= 1.05f &&
+                BoundsOf(RequireObject("Tripo Television")).center.y <= 1.55f,
+            "Television must be lowered to cabinet/wall viewing height.");
+        Require(Mathf.Abs(BoundsOf(RequireObject("Pink Vase")).center.y - 1.165f) <= 0.08f,
+            "Pink Vase must sit on the dining table.");
+        Require(RequireObject("Tripo Cat Tree").transform.position.x >= -4.8f,
+            "Cat tree must be pulled inward from the left wall.");
+        Require(RequireObject("Desktop Globe").GetComponent<Valuable>() != null &&
+                RequireObject("Lucky Cat").GetComponent<Valuable>() != null,
+            "Globe and lucky cat must be pushable valuable shelf props.");
         Require(table.size.x >= 2.55f && table.size.x <= 2.85f && table.size.y >= 0.70f && table.size.y <= 0.82f,
             $"Table is outside human furniture scale: {table.size}.");
         Require(sofa.size.x >= 2.30f && sofa.size.x <= 2.60f && sofa.size.y >= 0.82f && sofa.size.y <= 0.98f,
@@ -432,10 +564,16 @@ public static class GameValidationBatches
         laptopToCup.y = 0f;
         Require(laptopToCup.magnitude <= 0.55f,
             "Cup must stay close to the MacBook to communicate the spill opportunity.");
-        Require(tablet.min.z - table.min.z <= 0.22f,
-            $"iPad must sit close to the front edge for the first push tutorial: table.min.z={table.min.z:F2}, tablet.min.z={tablet.min.z:F2}.");
-        Require(RequireObject("Chair 01").transform.position.z <= -1.82f,
-            "Chair 01 must be pulled out as a readable jump step.");
+        Vector3 tabletPosition = RequireObject("iPad").transform.position;
+        Require(Mathf.Abs(tabletPosition.x - 1.50f) <= 0.08f &&
+                Mathf.Abs(tabletPosition.y - 0.81f) <= 0.08f &&
+                Mathf.Abs(tabletPosition.z + 0.30f) <= 0.08f,
+            $"iPad must use the Hi3D relayout target (1.50, 0.81, -0.30): actual={tabletPosition}.");
+        Require(tablet.min.x >= table.min.x - 0.05f && tablet.max.x <= table.max.x + 0.05f &&
+                tablet.min.z >= table.min.z - 0.05f && tablet.max.z <= table.max.z + 0.05f,
+            $"iPad must sit on the tabletop footprint: table={table}, tablet={tablet}.");
+        Require(RequireObject("Chair 01").transform.position.z <= -1.45f,
+            "Chair 01 must stay close to the table as a readable jump step.");
         foreach (string gameplayItem in new[] { "MacBook", "iPad", "Cup" })
         {
             GameObject item = RequireObject(gameplayItem);
@@ -499,6 +637,204 @@ public static class GameValidationBatches
         }
     }
 
+    private static void ValidateReferencePalette()
+    {
+        OpenRoom();
+        foreach (Renderer renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include,
+                     FindObjectsSortMode.None))
+        {
+            if (!renderer.enabled) continue;
+            foreach (Material material in renderer.sharedMaterials)
+            {
+                Require(material != null && material.shader != null,
+                    $"Batch 21: missing material on {HierarchyPath(renderer.transform)}.");
+                Color color = MaterialColor(material);
+                Require(!IsMagentaLike(color),
+                    $"Batch 21: magenta material on {HierarchyPath(renderer.transform)}: {color}.");
+                Require(!IsBrickRed(color),
+                    $"Batch 21: brick-red material remains on {HierarchyPath(renderer.transform)}: {color}.");
+            }
+        }
+
+        Color sofa = MaterialColor(RequireObject("Sofa").GetComponentInChildren<Renderer>().sharedMaterial);
+        Require(sofa.r > .82f && sofa.g > .76f && sofa.b > .64f,
+            $"Batch 21: sofa must use the warm cream reference palette: {sofa}.");
+    }
+
+    private static void ValidateReferenceFloor()
+    {
+        OpenRoom();
+        GameObject floor = RequireObject("Uniform Light Oak Floor");
+        Bounds bounds = BoundsOf(floor);
+        Require(bounds.size.x >= RoomShellInstaller.RoomWidth - .05f &&
+                bounds.size.z >= RoomShellInstaller.RoomDepth - .05f,
+            $"Batch 22: light-oak floor does not cover the compact room: {bounds.size}.");
+        Require(bounds.max.y <= .012f && bounds.min.y >= -.085f,
+            $"Batch 22: light-oak floor must meet the Y=0 walk surface: {bounds}.");
+
+        Renderer oak = FindDeep(floor.transform, "Continuous oak surface")?.GetComponent<Renderer>();
+        Require(oak != null, "Batch 22: continuous light-oak surface is missing.");
+        Color oakColor = MaterialColor(oak.sharedMaterial);
+        Require(oakColor.r >= .72f && oakColor.g >= .55f && oakColor.b >= .35f,
+            $"Batch 22: floor is not light warm oak: {oakColor}.");
+        Require(RequireObject("Floor").GetComponentsInChildren<Renderer>(true).All(r => !r.enabled),
+            "Batch 22: old red/incomplete Tripo floor is still visible.");
+
+        BoxCollider safety = RequireObject("Gameplay Floor Collider - full room").GetComponent<BoxCollider>();
+        Require(safety != null && safety.bounds.size.x >= RoomShellInstaller.RoomWidth - .02f &&
+                safety.bounds.size.z >= RoomShellInstaller.RoomDepth - .02f,
+            "Batch 22: continuous floor collider does not cover the visible floor.");
+    }
+
+    private static void ValidateCompactRoom()
+    {
+        OpenRoom();
+        Bounds back = BoundsOf(RequireObject("Back Wall"));
+        Bounds left = BoundsOf(RequireObject("Left Wall"));
+        Require(back.size.x <= 8.9f && back.size.x >= 8.7f,
+            $"Batch 23: room width is not compact 8.8 m: {back.size.x:F2}.");
+        Require(left.size.z <= 6.7f && left.size.z >= 6.5f,
+            $"Batch 23: room depth is not compact 6.6 m: {left.size.z:F2}.");
+        Require(Mathf.Abs(back.center.z - RoomShellInstaller.RoomDepth * .5f) < .06f &&
+                Mathf.Abs(left.center.x + RoomShellInstaller.RoomWidth * .5f) < .06f,
+            "Batch 23: compact walls are not aligned to the floor perimeter.");
+
+        foreach (string name in new[] { "Sofa", "Table", "Tripo Cat Tree", "Tripo Shelving Unit",
+                     "Tripo Tv Cabinet", "Tripo Navy Sideboard", "Tripo Hide Cardboard" })
+        {
+            Bounds item = BoundsOf(RequireObject(name));
+            Require(item.min.x >= -4.42f && item.max.x <= 4.42f && item.min.z >= -3.32f && item.max.z <= 3.32f,
+                $"Batch 23: {name} is outside the compact room: {item}.");
+        }
+    }
+
+    private static void ValidateReferenceSofa()
+    {
+        OpenRoom();
+        GameObject sofa = RequireObject("Sofa");
+        Bounds bounds = BoundsOf(sofa);
+        float sofaCenterZDelta = Mathf.Abs(bounds.center.z - .95f);
+        Require(bounds.center.x <= -3.15f && sofaCenterZDelta <= .16f,
+            $"Batch 24: sofa must be against the left wall like the reference: " +
+            $"center=({bounds.center.x:F6}, {bounds.center.y:F6}, {bounds.center.z:F6}), " +
+            $"zDelta={sofaCenterZDelta:F6}.");
+        Require(bounds.size.x >= .84f && bounds.size.x <= 1.12f &&
+                bounds.size.z >= 2.20f && bounds.size.z <= 2.60f &&
+                bounds.size.y >= .82f && bounds.size.y <= .98f,
+            $"Batch 24: sofa proportions are distorted: {bounds.size}.");
+        Require(Mathf.Abs(bounds.min.y) <= .03f, $"Batch 24: sofa is not grounded: {bounds.min.y:F3}.");
+        Color color = MaterialColor(sofa.GetComponentInChildren<Renderer>().sharedMaterial);
+        Require(color.r > .84f && color.g > .79f && color.b > .68f,
+            $"Batch 24: sofa is not cream: {color}.");
+    }
+
+    private static void ValidateReferenceTvZone()
+    {
+        OpenRoom();
+        Bounds cabinet = BoundsOf(RequireObject("Tripo Tv Cabinet"));
+        Bounds television = BoundsOf(RequireObject("Tripo Television"));
+        Bounds lamp = BoundsOf(RequireObject("Tripo Table Lamp"));
+        Require(cabinet.center.x >= 2.3f && cabinet.center.x <= 3.0f && cabinet.center.z >= 2.65f,
+            $"Batch 25: TV cabinet is not on the back-right wall: {cabinet.center}.");
+        Require(Mathf.Abs(television.center.x - cabinet.center.x) <= .12f &&
+                television.center.z >= cabinet.center.z && television.min.y >= cabinet.max.y - .03f,
+            $"Batch 25: TV is not correctly centered above its cabinet: tv={television}, cabinet={cabinet}.");
+        Require(lamp.min.y >= cabinet.max.y - .04f && lamp.center.x > cabinet.center.x,
+            $"Batch 25: lamp is not on the right side of the TV cabinet: {lamp}.");
+    }
+
+    private static void ValidateClimbableDisplayShelf()
+    {
+        OpenRoom();
+        GameObject shelf = RequireObject("Tripo Shelving Unit");
+        Bounds bounds = BoundsOf(shelf);
+        Require(bounds.size.x >= 1.55f && bounds.size.y >= 2.0f,
+            $"Batch 26: display shelf was not enlarged: {bounds.size}.");
+        BoxCollider[] steps = shelf.GetComponentsInChildren<BoxCollider>(true)
+            .Where(c => c.enabled && c.name.Contains("Climbable Shelf Platform", StringComparison.Ordinal)).ToArray();
+        Require(steps.Length == 4, $"Batch 26: shelf needs four climbable levels, actual={steps.Length}.");
+        float previousTop = 0f;
+        foreach (BoxCollider step in steps.OrderBy(c => c.bounds.max.y))
+        {
+            Require(step.bounds.size.x >= 1.45f && step.bounds.size.z >= .44f,
+                $"Batch 26: shelf step is too small for the cat: {step.bounds.size}.");
+            Require(step.bounds.max.y - previousTop <= .50f,
+                $"Batch 26: shelf step gap is not jumpable: {step.bounds.max.y - previousTop:F2} m.");
+            previousTop = step.bounds.max.y;
+        }
+        Require(BoundsOf(RequireObject("Desktop Globe")).min.y >= 1.66f &&
+                BoundsOf(RequireObject("Lucky Cat")).min.y >= 1.66f,
+            "Batch 26: globe and lucky cat must sit on the reachable upper shelf.");
+    }
+
+    private static void ValidateReferenceCatTree()
+    {
+        OpenRoom();
+        GameObject catTree = RequireObject("Tripo Cat Tree");
+        Bounds bounds = BoundsOf(catTree);
+        Require(bounds.center.x >= -2.1f && bounds.center.x <= -.8f && bounds.center.z >= 2.2f,
+            $"Batch 27: cat tree must sit between sofa and shelf: {bounds.center}.");
+        Require(bounds.size.y >= 1.45f && bounds.size.y <= 1.68f,
+            $"Batch 27: cat tree height is wrong: {bounds.size.y:F2}.");
+        Require(Mathf.Abs(bounds.min.y) <= .03f, $"Batch 27: cat tree is not grounded: {bounds.min.y:F3}.");
+        Color color = MaterialColor(catTree.GetComponentInChildren<Renderer>().sharedMaterial);
+        Require(color.r > .65f && color.g > .53f && color.b > .38f && !IsBrickRed(color),
+            $"Batch 27: cat tree must use soft beige, not brick red: {color}.");
+    }
+
+    private static void ValidateReferenceDiningCluster()
+    {
+        OpenRoom();
+        Bounds rug = BoundsOf(RequireObject("Large Cream Woven Rug"));
+        Bounds table = BoundsOf(RequireObject("Table"));
+        Require(rug.size.x >= 4.1f && rug.size.z >= 2.8f && rug.center.z < 0f,
+            $"Batch 28: cream rug does not anchor the dining cluster: {rug}.");
+        Require(Mathf.Abs(table.center.x) <= .08f && Mathf.Abs(table.center.z + .55f) <= .10f,
+            $"Batch 28: dining table is not centered on the rug: {table.center}.");
+        foreach (string chairName in new[] { "Chair 01", "Chair 02", "Chair 03" })
+        {
+            Bounds chair = BoundsOf(RequireObject(chairName));
+            Require(chair.min.y >= -.03f && chair.min.y <= .03f,
+                $"Batch 28: {chairName} is not grounded: {chair.min.y:F3}.");
+            Require(Vector2.Distance(new Vector2(chair.center.x, chair.center.z),
+                    new Vector2(table.center.x, table.center.z)) <= 1.65f,
+                $"Batch 28: {chairName} is too far from the table.");
+        }
+        foreach (string prop in new[] { "MacBook", "iPad", "Cup", "Cup 2", "Pink Vase" })
+        {
+            Bounds item = BoundsOf(RequireObject(prop));
+            Require(item.min.y >= table.max.y - .04f,
+                $"Batch 28: {prop} is not resting on the table: item={item}, table={table}.");
+        }
+    }
+
+    private static void ValidateReferenceLayoutPolish()
+    {
+        OpenRoom();
+        RequireObject("Tripo Curtain");
+        RequireObject("Tripo Hide Cardboard");
+        RequireObject("Tripo Navy Sideboard");
+        RequireObject("Cat portrait above sofa");
+        Require(GameObject.Find("Plant Print 01 - replaceable Tripo 08") == null &&
+                GameObject.Find("Plant Print 02 - replaceable Tripo 08") == null,
+            "The sofa wall should display only the cat portrait, not the old plant prints.");
+
+        Bounds curtain = BoundsOf(RequireObject("Tripo Curtain"));
+        Bounds box = BoundsOf(RequireObject("Tripo Hide Cardboard"));
+        Require(curtain.center.x >= 4.20f && curtain.max.x <= 4.42f,
+            $"Batch 29: curtain is not fitted to the right-wall window: {curtain}.");
+        Require(box.center.x >= 3.2f && box.center.z <= -2.1f && Mathf.Abs(box.min.y) <= .03f,
+            $"Batch 29: cardboard hide box is not grounded in the front-right corner: {box}.");
+
+        // The four main zones should form a compact ring around the dining rug,
+        // with no large empty dead zone between them.
+        Vector3 sofa = BoundsOf(RequireObject("Sofa")).center;
+        Vector3 shelf = BoundsOf(RequireObject("Tripo Shelving Unit")).center;
+        Vector3 tv = BoundsOf(RequireObject("Tripo Tv Cabinet")).center;
+        Require(Vector3.Distance(sofa, shelf) <= 4.7f && Vector3.Distance(shelf, tv) <= 2.8f,
+            "Batch 29: furniture zones are still too spread out for the reference layout.");
+    }
+
     private static void ValidateBootstrapAndCamera()
     {
         Require(typeof(GameBootstrap).GetMethod("StartGame", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static) != null,
@@ -506,8 +842,9 @@ public static class GameValidationBatches
         Require(typeof(ThirdPersonCamera).GetMethod("Initialize") != null, "Third-person camera initialization is missing.");
         RuntimeAnimatorController catController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
             CatControllerPath);
-        Require(catController != null && catController.animationClips.Any(c => c.name == "Cat_Push_Side"),
-            "E-key push animation is not connected to the runtime cat controller.");
+        Require(catController != null && catController.animationClips.Any(c =>
+                c.name.EndsWith("Cat_Push_Right", StringComparison.Ordinal)),
+            "Push animation is not connected to the runtime 3D cat controller.");
         OpenRoom();
         Require(Camera.main != null, "Scene Main Camera is missing.");
         Require(GameObject.Find("Living Room") != null, "Bootstrap guard requires a Living Room root.");
@@ -540,6 +877,36 @@ public static class GameValidationBatches
             if (result != null) return result;
         }
         return null;
+    }
+
+    private static string HierarchyPath(Transform transform)
+    {
+        List<string> parts = new();
+        for (Transform current = transform; current != null; current = current.parent)
+            parts.Add(current.name);
+        parts.Reverse();
+        return string.Join("/", parts);
+    }
+
+    private static Color MaterialColor(Material material)
+    {
+        if (material == null) return Color.magenta;
+        if (material.HasProperty("_BaseColor")) return material.GetColor("_BaseColor");
+        if (material.HasProperty("_Color")) return material.GetColor("_Color");
+        return material.color;
+    }
+
+    private static bool IsMagentaLike(Color color)
+    {
+        return color.r > 0.85f && color.b > 0.65f && color.g < 0.25f;
+    }
+
+    private static bool IsBrickRed(Color color)
+    {
+        // Reject the dark rusty-red family that dominated the previous floor,
+        // rug and furniture, while allowing small pink, orange and gold accents.
+        return color.r > .42f && color.g >= .16f && color.g <= .36f && color.b < .30f &&
+               color.r > color.g * 1.65f && color.g > color.b * 1.05f;
     }
 
     private static void Require(bool condition, string message)

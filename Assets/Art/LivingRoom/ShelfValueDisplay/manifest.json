@@ -1,0 +1,914 @@
+{
+  "items": [
+    {
+      "id": "GoldTrophy",
+      "path": "Assets/Art/LivingRoom/GoldTrophy/GoldTrophy.fbx",
+      "materials": [
+        {
+          "name": "Polished warm gold",
+          "color": [
+            0.7200000286102295,
+            0.4099999964237213,
+            0.0949999988079071,
+            1
+          ],
+          "metallic": 0.9200000166893005,
+          "smoothness": 0.7900000065565109,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Satin gold laurel",
+          "color": [
+            0.6499999761581421,
+            0.3400000035762787,
+            0.07000000029802322,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.7100000083446503,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Ivory marble with warm veins",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7400000095367432,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/GoldTrophy_2.png",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "PiggyBank",
+      "path": "Assets/Art/LivingRoom/PiggyBank/PiggyBank.fbx",
+      "materials": [
+        {
+          "name": "Glossy dark eyes",
+          "color": [
+            0.012000000104308128,
+            0.00800000037997961,
+            0.006000000052154064,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.880000002682209,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Rose pink ceramic",
+          "color": [
+            0.8500000238418579,
+            0.3799999952316284,
+            0.36000001430511475,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7400000095367432,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Glazed warm ivory ceramic",
+          "color": [
+            0.8799999952316284,
+            0.7900000214576721,
+            0.6399999856948853,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.8100000023841858,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Champagne gold",
+          "color": [
+            0.7200000286102295,
+            0.4300000071525574,
+            0.11999999731779099,
+            1
+          ],
+          "metallic": 0.7799999713897705,
+          "smoothness": 0.7699999958276749,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Recess shadow",
+          "color": [
+            0.09000000357627869,
+            0.03500000014901161,
+            0.023000000044703484,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.5999999940395355,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Eye catchlight",
+          "color": [
+            1,
+            0.9599999785423279,
+            0.8299999833106995,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.8499999940395355,
+          "texture": "",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "PocketClock",
+      "path": "Assets/Art/LivingRoom/PocketClock/PocketClock.fbx",
+      "materials": [
+        {
+          "name": "18K polished gold",
+          "color": [
+            0.6899999976158142,
+            0.38999998569488525,
+            0.10499999672174454,
+            1
+          ],
+          "metallic": 0.8999999761581421,
+          "smoothness": 0.7800000011920929,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Antique satin gold relief",
+          "color": [
+            0.4300000071525574,
+            0.23499999940395355,
+            0.054999999701976776,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.6800000071525574,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Blued steel hands",
+          "color": [
+            0.012000000104308128,
+            0.02800000086426735,
+            0.04500000178813934,
+            1
+          ],
+          "metallic": 0.7799999713897705,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Clear sapphire crystal",
+          "color": [
+            0.9700000286102295,
+            0.9900000095367432,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.9450000002980232,
+          "texture": "",
+          "glass": true
+        },
+        {
+          "name": "Ivory enamel dial",
+          "color": [
+            0.8600000143051147,
+            0.7900000214576721,
+            0.6100000143051147,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7699999958276749,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Polished walnut",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7400000095367432,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/PocketClock_5.png",
+          "glass": false
+        },
+        {
+          "name": "Warm black enamel numerals",
+          "color": [
+            0.01600000075995922,
+            0.012000000104308128,
+            0.00800000037997961,
+            1
+          ],
+          "metallic": 0.15000000596046448,
+          "smoothness": 0.6800000071525574,
+          "texture": "",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "BlueGoldVase",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/BlueGoldVase/BlueGoldVase.fbx",
+      "materials": [
+        {
+          "name": "Cobalt enamel",
+          "color": [
+            0.012000000104308128,
+            0.06499999761581421,
+            0.18000000715255737,
+            1
+          ],
+          "metallic": 0.11999999731779099,
+          "smoothness": 0.7699999958276749,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Ivory porcelain",
+          "color": [
+            0.8600000143051147,
+            0.8100000023841858,
+            0.6800000071525574,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7800000011920929,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "BronzeBird",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/BronzeBird/BronzeBird.fbx",
+      "materials": [
+        {
+          "name": "Aged bronze",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0.7799999713897705,
+          "smoothness": 0.6699999868869781,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/BronzeBird_0.png",
+          "glass": false
+        },
+        {
+          "name": "Black enamel",
+          "color": [
+            0.008999999612569809,
+            0.012000000104308128,
+            0.012000000104308128,
+            1
+          ],
+          "metallic": 0.11999999731779099,
+          "smoothness": 0.6800000071525574,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Green marble",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.760000005364418,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/BronzeBird_2.png",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "HeadphonesStand",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/HeadphonesStand/HeadphonesStand.fbx",
+      "materials": [
+        {
+          "name": "Black enamel",
+          "color": [
+            0.008999999612569809,
+            0.012000000104308128,
+            0.012000000104308128,
+            1
+          ],
+          "metallic": 0.11999999731779099,
+          "smoothness": 0.6800000071525574,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Black leather",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.5,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/HeadphonesStand_1.png",
+          "glass": false
+        },
+        {
+          "name": "Deep teal earcups",
+          "color": [
+            0.014999999664723873,
+            0.054999999701976776,
+            0.05999999865889549,
+            1
+          ],
+          "metallic": 0.75,
+          "smoothness": 0.7299999892711639,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Walnut stand",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.699999988079071,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/HeadphonesStand_3.png",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "Book_01",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/LeatherBooks/Book_01.fbx",
+      "materials": [
+        {
+          "name": "Gilded page edges",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0.11999999731779099,
+          "smoothness": 0.44999998807907104,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/Book_01_0.png",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Ivory porcelain",
+          "color": [
+            0.8600000143051147,
+            0.8100000023841858,
+            0.6800000071525574,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7800000011920929,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Emerald leather",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.5200000107288361,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/Book_01_3.png",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "Book_02",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/LeatherBooks/Book_02.fbx",
+      "materials": [
+        {
+          "name": "Gilded page edges",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0.11999999731779099,
+          "smoothness": 0.44999998807907104,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/Book_02_0.png",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Ivory porcelain",
+          "color": [
+            0.8600000143051147,
+            0.8100000023841858,
+            0.6800000071525574,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7800000011920929,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Burgundy leather",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.5200000107288361,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/Book_02_3.png",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "Book_03",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/LeatherBooks/Book_03.fbx",
+      "materials": [
+        {
+          "name": "Gilded page edges",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0.11999999731779099,
+          "smoothness": 0.44999998807907104,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/Book_03_0.png",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Ivory porcelain",
+          "color": [
+            0.8600000143051147,
+            0.8100000023841858,
+            0.6800000071525574,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7800000011920929,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Midnight leather",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.5200000107288361,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/Book_03_3.png",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "MantelClock",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/MantelClock/MantelClock.fbx",
+      "materials": [
+        {
+          "name": "Antique silver",
+          "color": [
+            0.5199999809265137,
+            0.47999998927116394,
+            0.4099999964237213,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.7199999988079071,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Black enamel",
+          "color": [
+            0.008999999612569809,
+            0.012000000104308128,
+            0.012000000104308128,
+            1
+          ],
+          "metallic": 0.11999999731779099,
+          "smoothness": 0.6800000071525574,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Ivory porcelain",
+          "color": [
+            0.8600000143051147,
+            0.8100000023841858,
+            0.6800000071525574,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7800000011920929,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Mahogany case",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.699999988079071,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/MantelClock_3.png",
+          "glass": false
+        },
+        {
+          "name": "Mechanical shadow",
+          "color": [
+            0.02500000037252903,
+            0.017999999225139618,
+            0.010999999940395355,
+            1
+          ],
+          "metallic": 0.550000011920929,
+          "smoothness": 0.6500000059604645,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "SilverMusicBox",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/SilverMusicBox/SilverMusicBox.fbx",
+      "materials": [
+        {
+          "name": "Aged engraved silver",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.7299999892711639,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/SilverMusicBox_0.png",
+          "glass": false
+        },
+        {
+          "name": "Antique silver",
+          "color": [
+            0.5199999809265137,
+            0.47999998927116394,
+            0.4099999964237213,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.7199999988079071,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "SnowGlobe",
+      "path": "Assets/Art/LivingRoom/ShelfCollection/SnowGlobe/SnowGlobe.fbx",
+      "materials": [
+        {
+          "name": "Brown slate roof",
+          "color": [
+            0.10999999940395355,
+            0.06499999761581421,
+            0.03999999910593033,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.30000001192092896,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Clear globe glass",
+          "color": [
+            0.9599999785423279,
+            0.9800000190734863,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.9649999998509884,
+          "texture": "",
+          "glass": true
+        },
+        {
+          "name": "Cottage cream plaster",
+          "color": [
+            0.6000000238418579,
+            0.4000000059604645,
+            0.20999999344348907,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.30000001192092896,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Fir needles",
+          "color": [
+            0.014000000432133675,
+            0.07500000298023224,
+            0.04699999839067459,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.3500000238418579,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Snow globe walnut",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.699999988079071,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/SnowGlobe_4.png",
+          "glass": false
+        },
+        {
+          "name": "Soft white snow",
+          "color": [
+            0.9100000262260437,
+            0.949999988079071,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.2799999713897705,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Warm gold",
+          "color": [
+            0.6499999761581421,
+            0.36000001430511475,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.760000005364418,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Warm lit windows",
+          "color": [
+            0.949999988079071,
+            0.38999998569488525,
+            0.054999999701976776,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.7199999988079071,
+          "texture": "",
+          "glass": false
+        }
+      ]
+    },
+    {
+      "id": "VintageCamera",
+      "path": "Assets/Art/LivingRoom/VintageCamera/VintageCamera.fbx",
+      "materials": [
+        {
+          "name": "Black enamel",
+          "color": [
+            0.012000000104308128,
+            0.01600000075995922,
+            0.019999999552965164,
+            1
+          ],
+          "metallic": 0.3499999940395355,
+          "smoothness": 0.75,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Brushed champagne silver",
+          "color": [
+            0.5600000023841858,
+            0.550000011920929,
+            0.5,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.7199999988079071,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Dark focus grip",
+          "color": [
+            0.023000000044703484,
+            0.017999999225139618,
+            0.014000000432133675,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.5300000011920929,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Warm brass trim",
+          "color": [
+            0.6299999952316284,
+            0.36000001430511475,
+            0.10999999940395355,
+            1
+          ],
+          "metallic": 0.8500000238418579,
+          "smoothness": 0.7800000011920929,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Violet coated optical glass",
+          "color": [
+            0.02500000037252903,
+            0.017999999225139618,
+            0.08500000089406967,
+            1
+          ],
+          "metallic": 0.6499999761581421,
+          "smoothness": 0.9099999964237213,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Blue optical coating",
+          "color": [
+            0.017999999225139618,
+            0.07500000298023224,
+            0.11999999731779099,
+            1
+          ],
+          "metallic": 0.6000000238418579,
+          "smoothness": 0.880000002682209,
+          "texture": "",
+          "glass": false
+        },
+        {
+          "name": "Brown pebbled leather",
+          "color": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "metallic": 0,
+          "smoothness": 0.44999998807907104,
+          "texture": "Assets/Art/LivingRoom/ShelfValueDisplay/VintageCamera_6.png",
+          "glass": false
+        }
+      ]
+    }
+  ]
+}

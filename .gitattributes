@@ -1,0 +1,8 @@
+# Keep large authored 3D files out of normal Git object history.
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.glb filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+
+# These scene-referenced generated meshes exceed GitHub's 100 MB file limit.
+/Assets/Settings/LivingRoom/FurnitureFinishes/*.asset filter=lfs diff=lfs merge=lfs -text
+/Assets/Settings/LivingRoom/ReferenceShelf/*.asset filter=lfs diff=lfs merge=lfs -text

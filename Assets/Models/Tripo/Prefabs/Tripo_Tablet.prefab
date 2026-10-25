@@ -120,7 +120,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScoreItem
   points: 35
   displayName: Tablet
-  noise: 30
+  noise: 22.75
+  weight: 1.2
 --- !u!1001 &7619450955676400675
 PrefabInstance:
   m_ObjectHideFlags: 0

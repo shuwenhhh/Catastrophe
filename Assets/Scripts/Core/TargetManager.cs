@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Progress is tracked silently; GameFlowUI owns the end-of-run presentation.
 public sealed class TargetManager : MonoBehaviour
 {
     public static TargetManager I;
@@ -33,15 +34,24 @@ public sealed class TargetManager : MonoBehaviour
     private string currentPrompt;
     private bool levelComplete;
     private GameManager observedGameManager;
-    private GUIStyle promptStyle;
-    private GUIStyle completionTitleStyle;
-    private GUIStyle completionBodyStyle;
-    private GUIStyle objectiveMarkerStyle;
-    private float levelStartedAt;
 
     public string CurrentTargetId => levelComplete ? string.Empty : TargetIds[targetIndex];
     public string CurrentPrompt => currentPrompt;
     public bool IsLevelComplete => levelComplete;
+    public int SavedTargetIndex => targetIndex;
+    public List<string> SavedCups => new List<Valuable>(fallenCups).ConvertAll(v => GameSaveStore.ObjectKey(v.transform));
+
+    public void RestoreProgress(int index, List<string> cups)
+    {
+        targetIndex = Mathf.Clamp(index, 0, TargetIds.Length - 1);
+        levelComplete = false;
+        fallenCups.Clear();
+        DiscoverValuables();
+        foreach (var value in observedValuables)
+            if (value && cups.Contains(GameSaveStore.ObjectKey(value.transform))) fallenCups.Add(value);
+        currentPrompt = TargetPrompts[targetIndex];
+        RaiseTargetChanged(currentPrompt);
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void EnsureInstance()
@@ -60,7 +70,6 @@ public sealed class TargetManager : MonoBehaviour
 
         I = this;
         currentPrompt = TargetPrompts[0];
-        levelStartedAt = Time.time;
     }
 
     private void Start()
@@ -190,113 +199,6 @@ public sealed class TargetManager : MonoBehaviour
         return value.IndexOf(expected, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private void OnGUI()
-    {
-        if (!GameFlowUI.GameplayInputEnabled)
-            return;
-
-        float uiScale = Mathf.Clamp(Screen.height / 1080f, 1f, 2f);
-        Matrix4x4 previousMatrix = GUI.matrix;
-        GUI.matrix = Matrix4x4.Scale(new Vector3(uiScale, uiScale, 1f));
-        float logicalWidth = Screen.width / uiScale;
-        float logicalHeight = Screen.height / uiScale;
-
-        promptStyle ??= new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 24,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = Color.white }
-        };
-
-        GUI.Box(new Rect(0f, logicalHeight - 86f, logicalWidth, 58f), GUIContent.none);
-        GUI.Label(new Rect(20f, logicalHeight - 82f, logicalWidth - 40f, 48f), currentPrompt, promptStyle);
-        DrawObjectiveMarker(uiScale);
-
-        GUI.matrix = previousMatrix;
-    }
-
-    private void DrawObjectiveMarker(float uiScale)
-    {
-        Valuable objective = FindObjectiveValuable();
-        Camera camera = Camera.main;
-        if (objective == null || camera == null)
-            return;
-
-        Vector3 world = objective.transform.position + Vector3.up * 0.42f;
-        Vector3 screen = camera.WorldToScreenPoint(world);
-        if (screen.z <= 0f)
-            return;
-
-        objectiveMarkerStyle ??= new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 18,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = new Color(1f, 0.78f, 0.18f) }
-        };
-        float pulse = 1f + Mathf.Sin(Time.unscaledTime * 5f) * 0.06f;
-        float x = screen.x / uiScale;
-        float y = (Screen.height - screen.y) / uiScale;
-        Matrix4x4 old = GUI.matrix;
-        GUIUtility.ScaleAroundPivot(new Vector2(pulse, pulse), new Vector2(x, y));
-        GUI.Label(new Rect(x - 76f, y - 52f, 152f, 44f), "▼  目标", objectiveMarkerStyle);
-        GUI.matrix = old;
-    }
-
-    private Valuable FindObjectiveValuable()
-    {
-        foreach (Valuable valuable in observedValuables)
-        {
-            if (valuable == null)
-                continue;
-            string itemName = string.IsNullOrWhiteSpace(valuable.itemName) ? valuable.name : valuable.itemName;
-            if (CurrentTargetId == IpadTarget && IsTablet(itemName)) return valuable;
-            if (CurrentTargetId == CupsTarget && IsCup(itemName) && !fallenCups.Contains(valuable)) return valuable;
-            if (CurrentTargetId == FragileTarget && valuable.fragile) return valuable;
-        }
-        return null;
-    }
-
-    private void DrawCompletionPanel(float width, float height)
-    {
-        completionTitleStyle ??= new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 34,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = Color.white }
-        };
-        completionBodyStyle ??= new GUIStyle(completionTitleStyle) { fontSize = 20 };
-
-        Rect panel = new Rect(width * 0.5f - 230f, height * 0.5f - 115f, 460f, 230f);
-        GUI.Box(panel, GUIContent.none);
-        GUI.Label(new Rect(panel.x + 20f, panel.y + 30f, panel.width - 40f, 56f),
-            "ROOM WRECKED!", completionTitleStyle);
-        int score = GameManager.I != null ? GameManager.I.chaosScore : 0;
-        float elapsed = Mathf.Max(0f, Time.time - levelStartedAt);
-        string grade = elapsed <= 90f && score >= 150 ? "S" : elapsed <= 150f && score >= 100 ? "A" : "B";
-        string receipt = BuildReceipt();
-        GUI.Label(new Rect(panel.x + 20f, panel.y + 88f, panel.width - 40f, 122f),
-            $"{receipt}\nTOTAL  ¥{score * 100:N0}    CHAOS {score}    RANK {grade}", completionBodyStyle);
-    }
-
-    private static string BuildReceipt()
-    {
-        if (GameManager.I == null || GameManager.I.Receipt.Count == 0)
-            return "No damaged items recorded";
-
-        System.Text.StringBuilder text = new System.Text.StringBuilder();
-        int first = Mathf.Max(0, GameManager.I.Receipt.Count - 3);
-        for (int index = first; index < GameManager.I.Receipt.Count; index++)
-        {
-            GameManager.ChaosEntry entry = GameManager.I.Receipt[index];
-            if (text.Length > 0)
-                text.Append('\n');
-            text.Append(entry.itemName).Append("   ¥").Append((entry.points * 100).ToString("N0"));
-        }
-        return text.ToString();
-    }
 
     private void OnDestroy()
     {

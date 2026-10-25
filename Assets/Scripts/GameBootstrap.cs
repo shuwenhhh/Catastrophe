@@ -1,21 +1,46 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 public sealed class GameBootstrap : MonoBehaviour
 {
     public static GameBootstrap Instance { get; private set; }
 
-    private string toast = "WASD move  •  SPACE jump  •  E push / hide";
-    private GUIStyle titleStyle;
-    private GUIStyle scoreStyle;
-    private GUIStyle toastStyle;
+    // Legacy scoring callers remain compatible; the clean HUD owns all feedback.
+    private string toast = string.Empty;
+
+    // These points are deliberately in the open half of the room, not near the
+    // sofa, hide-box, chair legs, or dining table.  Imported furniture sometimes
+    // changes its pivot/collider slightly when its prefab is rebuilt, so a single
+    // hard-coded spawn point is not sufficiently safe.
+    private static readonly Vector3[] CatSpawnCandidates =
+    {
+        new(-0.55f, 0.225f, -1.55f),
+        new(1.70f, 0.225f, -2.35f),
+        new(3.25f, 0.225f, -1.65f),
+        new(0.10f, 0.225f, -2.70f)
+    };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void StartGame()
     {
         if (FindAnyObjectByType<GameBootstrap>() == null)
             new GameObject("Catastrophe Game").AddComponent<GameBootstrap>();
+        if (FindAnyObjectByType<TargetManager>() == null)
+            new GameObject("Target Manager").AddComponent<TargetManager>();
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void RegisterSceneRestart()
+    {
+        SceneManager.sceneLoaded -= OnGameplaySceneLoaded;
+        SceneManager.sceneLoaded += OnGameplaySceneLoaded;
+    }
+
+    private static void OnGameplaySceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "LivingRoom") StartGame();
     }
 
     private void Awake()
@@ -25,6 +50,8 @@ public sealed class GameBootstrap : MonoBehaviour
         CreateCoreServices();
         ClearTemplateScene();
         CreateRoom();
+        CatSolidCollision.EnsureFurnitureCollisions(GameObject.Find("Living Room"));
+        CatSolidCollision.EnsureFurnitureCollisions(GameObject.Find("Tripo Art Pass (editable)"), true);
         EnsureObjectiveProps();
         CreateCat();
         CreateHideSpots();
@@ -39,8 +66,7 @@ public sealed class GameBootstrap : MonoBehaviour
         NoiseManager noiseManager = FindAnyObjectByType<NoiseManager>();
         if (noiseManager == null)
             noiseManager = gameObject.AddComponent<NoiseManager>();
-        // The design contract fixes the alert threshold at 70.
-        noiseManager.threshold = 70f;
+        noiseManager.threshold = 100f;
 
         if (FindAnyObjectByType<OwnerAlert>() == null)
             gameObject.AddComponent<OwnerAlert>();
@@ -53,6 +79,9 @@ public sealed class GameBootstrap : MonoBehaviour
 
         if (FindAnyObjectByType<GameFlowUI>() == null)
             gameObject.AddComponent<GameFlowUI>();
+
+        if (FindAnyObjectByType<MobileCatControls>() == null)
+            gameObject.AddComponent<MobileCatControls>();
     }
 
     private void OnDestroy()
@@ -69,15 +98,8 @@ public sealed class GameBootstrap : MonoBehaviour
 
     public void ShowChaosToast(int points, string itemName)
     {
-        toast = $"{itemName} crashed!  +{points}";
-        StopAllCoroutines();
-        StartCoroutine(ClearToast());
-    }
-
-    private IEnumerator ClearToast()
-    {
-        yield return new WaitForSeconds(2.5f);
-        toast = "Keep causing chaos!";
+        // Only the amount and timer change. No floating money or narration.
+        toast = string.Empty;
     }
 
     private static void ClearTemplateScene()
@@ -219,6 +241,13 @@ public sealed class GameBootstrap : MonoBehaviour
 
     private void CreateCat()
     {
+        // A cat authored into a test scene used to survive alongside the runtime
+        // cat.  That made it look as though the player had spawned inside the
+        // sofa whenever the old test cat happened to be there.  The bootstrap
+        // owns the one gameplay cat, so remove any stale instance first.
+        foreach (CatController existingCat in FindObjectsByType<CatController>(FindObjectsSortMode.None))
+            DestroySceneObject(existingCat.gameObject);
+
         GameObject cat = new GameObject("Mischief Cat");
         cat.name = "Mischief Cat";
         // Keep the cat at an animal scale relative to the 76 cm dining table.
@@ -226,45 +255,106 @@ public sealed class GameBootstrap : MonoBehaviour
         // a chair collider.
         // The capsule bottom is 0.225 m below the root. Spawn tangent to the
         // floor so the cat does not visibly settle downward on the first frame.
-        cat.transform.position = new Vector3(-0.55f, 0.225f, -1.55f);
+        cat.transform.position = CatSpawnCandidates[0];
 
         Rigidbody body = cat.AddComponent<Rigidbody>();
         body.mass = 1.5f;
         body.angularDamping = 8f;
         body.interpolation = RigidbodyInterpolation.Interpolate;
-        body.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        // Only the controller may author facing; contacts must not spin the cat.
+        body.constraints = RigidbodyConstraints.FreezeRotation;
         CapsuleCollider collider = cat.AddComponent<CapsuleCollider>();
         collider.radius = 0.20f;
         collider.height = 0.50f;
         collider.center = new Vector3(0f, 0.025f, 0f);
-        // The gameplay cat is authored from the same smooth tuxedo-kitten
-        // sprite set used by the art-direction sheets.  Do not silently fall
-        // back to the old furry FBX: its proportions and rigged poses are a
-        // different character and make walking/pushing look unrelated.
-        GameObject catVisualPrefab = Resources.Load<GameObject>("Cat/CatSprite");
+        // Actual skinned 3D model imported from hi3d-smooth-kitten_1.glb.
+        // Keep the old sprite prefab intact for rollback, but never instantiate it here.
+        GameObject catVisualPrefab = Resources.Load<GameObject>("SmoothKitten3D/SmoothKitten3D");
         if (catVisualPrefab != null)
         {
             GameObject visual = Instantiate(catVisualPrefab, cat.transform);
-            visual.name = "Smooth Tuxedo Kitten Visual";
-            // The source frames are 724 px tall with generous transparent
-            // padding.  This calibrated scale keeps the kitten at roughly
-            // 50–60 cm and lets CatController's per-frame paw baseline land on
-            // the capsule bottom without a first-frame pop.
-            visual.transform.localPosition = new Vector3(0f, 0.055f, 0f);
+            visual.name = "Smooth Kitten 3D Visual";
+            // Source feet are at -0.444115 m. Align them to capsule bottom -0.225.
+            visual.transform.localPosition = Vector3.down * .225f +
+                (new Vector3(0f, 0.063675f, 0f) + Vector3.up * .225f) * CatSolidCollision.SizeFactor;
             visual.transform.localRotation = Quaternion.identity;
-            visual.transform.localScale = Vector3.one * 0.52f;
+            visual.transform.localScale = Vector3.one * (0.65f * CatSolidCollision.SizeFactor);
             foreach (Collider childCollider in visual.GetComponentsInChildren<Collider>())
                 childCollider.enabled = false;
         }
         else
         {
-            Debug.LogError("Smooth kitten prefab was not found in Resources/Cat/CatSprite.");
+            Debug.LogError("3D kitten prefab was not found in Resources/SmoothKitten3D/SmoothKitten3D.");
         }
 
         // Add the controller after the visual child exists so its lifecycle can bind
-        // the Animator and SpriteRenderer immediately.
+        // the skeleton Animator immediately.
+        cat.AddComponent<CatSolidCollision>();
         cat.AddComponent<CatController>();
         cat.AddComponent<CatContactShadow>();
+        PlaceCatAtSafeSpawn(cat);
+        StartCoroutine(RecheckCatSpawnAfterPhysics(cat));
+    }
+
+    private void PlaceCatAtSafeSpawn(GameObject cat)
+    {
+        if (cat == null)
+            return;
+
+        Physics.SyncTransforms();
+        foreach (Vector3 candidate in CatSpawnCandidates)
+        {
+            cat.transform.position = candidate;
+            Physics.SyncTransforms();
+            if (!CatOverlapsSolidFurniture(cat))
+                return;
+        }
+
+        // This should never be reached, but leaving a clear diagnostic is much
+        // safer than silently creating the cat inside a sofa or cabinet.
+        Debug.LogError("No clear cat spawn point was found; check LivingRoom furniture colliders.");
+        cat.transform.position = CatSpawnCandidates[0];
+    }
+
+    private IEnumerator RecheckCatSpawnAfterPhysics(GameObject cat)
+    {
+        // Prefab-instantiated colliders can register one physics step after
+        // Awake. Re-checking here catches that timing edge without ever moving a
+        // player who has begun walking around the room.
+        yield return new WaitForFixedUpdate();
+        if (cat != null && CatOverlapsSolidFurniture(cat))
+            PlaceCatAtSafeSpawn(cat);
+    }
+
+    private static bool CatOverlapsSolidFurniture(GameObject cat)
+    {
+        CatSolidCollision solid = cat.GetComponent<CatSolidCollision>();
+        if (solid != null) return !solid.CanOccupy(cat.transform.position, cat.transform.rotation);
+        CapsuleCollider capsule = cat.GetComponent<CapsuleCollider>();
+        if (capsule == null)
+            return false;
+
+        Vector3 center = cat.transform.TransformPoint(capsule.center);
+        float radius = capsule.radius * Mathf.Max(cat.transform.lossyScale.x, cat.transform.lossyScale.z);
+        float halfSegment = Mathf.Max(0f, capsule.height * cat.transform.lossyScale.y * 0.5f - radius);
+        Vector3 top = center + Vector3.up * halfSegment;
+        Vector3 bottom = center - Vector3.up * halfSegment;
+
+        foreach (Collider hit in Physics.OverlapCapsule(top, bottom, radius * 0.98f,
+                     Physics.AllLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (hit == capsule || hit.transform.IsChildOf(cat.transform) || hit.isTrigger)
+                continue;
+
+            // The floor is expected contact.  Furniture and walls have volume
+            // above it and must not intersect the initial cat capsule.
+            Bounds bounds = hit.bounds;
+            if (bounds.max.y <= 0.04f && bounds.size.y <= 0.30f)
+                continue;
+            return true;
+        }
+
+        return false;
     }
 
     private static void BuildSmoothCartoonShell(Transform parent)
@@ -320,34 +410,84 @@ public sealed class GameBootstrap : MonoBehaviour
 
     private static void CreateHideSpots()
     {
-        CreateHideSpot("Hide Spot - Cardboard Box", "纸箱", new Vector3(-5.1f, 0.35f, -2.4f),
-            new Vector3(1.15f, 0.7f, 1.15f), new Color(0.55f, 0.32f, 0.13f, 0.72f));
-        CreateHideSpot("Hide Spot - Under Sofa", "沙发底", new Vector3(3.9f, 0.22f, -2.25f),
-            new Vector3(2.4f, 0.44f, 1.05f), new Color(0.34f, 0.22f, 0.16f, 0.32f));
-        CreateHideSpot("Hide Spot - Behind Curtain", "窗帘后", new Vector3(-6.25f, 1.15f, 4.55f),
-            new Vector3(0.65f, 2.3f, 1.45f), new Color(0.72f, 0.32f, 0.38f, 0.32f));
+        CreateHideSpot("Hide Spot - Cardboard Box", "纸箱", new Vector3(3.55f, 0.30f, -2.42f),
+            new Vector3(0.95f, 0.60f, 0.95f));
+        // The current Tripo sofa has a solid plinth, not an open cavity.  Its old
+        // "under sofa" trigger let the cat hide inside opaque geometry, exactly
+        // the visual bug seen in Play mode. Keep the valid cardboard/curtain
+        // hiding points and remove this legacy trigger until the sofa asset has
+        // a real playable gap below it.
+        GameObject underSofa = GameObject.Find("Hide Spot - Under Sofa");
+        if (underSofa != null)
+            DestroySceneObject(underSofa);
+        CreateHideSpot("Hide Spot - Behind Curtain", "窗帘后", new Vector3(4.05f, 1.15f, 0f),
+            new Vector3(0.50f, 2.30f, 1.45f));
+        CreateCatTreeHideSpot();
+    }
+
+    private static void CreateCatTreeHideSpot()
+    {
+        var tree = GameObject.Find("Reference carpet cat tree");
+        if (tree && tree.TryGetComponent<StorybookCatTree>(out var storybookTree))
+        {
+            storybookTree.ConfigureHiding();
+            return;
+        }
+        if (!tree || tree.transform.Find("Playable hollow cubby")) return;
+        // The original decorative opening is lower than the actual cat's
+        // shoulders/tail. Enlarge the real hollow shell, never disable walls.
+        var shell = new GameObject("Playable hollow cubby").transform;
+        shell.SetParent(tree.transform, false);
+        shell.localPosition = new Vector3(3.65f, .235f, -2.43f);
+        foreach (var part in tree.GetComponentsInChildren<MeshRenderer>())
+            if (part.name.StartsWith("Cubby ") || part.name.StartsWith("Door ") || part.name == "Arched cubby entrance")
+                part.transform.SetParent(shell, true);
+        shell.localScale = new Vector3(1.12f, 2f, 1.15f);
+
+        var spot = new GameObject("Hide Spot - Cat Tree Cubby");
+        spot.transform.SetParent(tree.transform, false);
+        spot.transform.localPosition = new Vector3(3.08f, .50f, -2.43f);
+        var trigger = spot.AddComponent<BoxCollider>();
+        trigger.size = new Vector3(.75f, .75f, .78f);
+        var hide = spot.AddComponent<HideSpot>();
+        hide.Configure("猫爬架小窝");
+        var inside = new GameObject("Inside cat tree cubby").transform;
+        inside.SetParent(tree.transform, false);
+        inside.localPosition = new Vector3(3.55f, .466f, -2.43f);
+        inside.localRotation = Quaternion.Euler(0f, 270f, 0f);
+        var outside = new GameObject("Outside cat tree cubby").transform;
+        outside.SetParent(tree.transform, false);
+        outside.localPosition = new Vector3(2.91f, .371f, -2.43f);
+        outside.localRotation = inside.localRotation;
+        hide.SetAnchors(inside, outside);
     }
 
     private static void CreateHideSpot(string objectName, string displayName, Vector3 position,
-        Vector3 scale, Color color)
+        Vector3 scale)
     {
-        if (GameObject.Find(objectName) != null)
-            return;
-
-        GameObject spot = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        spot.name = objectName;
-        spot.transform.position = position;
-        spot.transform.localScale = scale;
-        SetColor(spot, color);
-        Renderer renderer = spot.GetComponent<Renderer>();
-        if (renderer != null)
+        GameObject spot = GameObject.Find(objectName);
+        if (spot == null)
         {
-            renderer.material.SetFloat("_Surface", 1f);
-            renderer.material.color = color;
+            // Gameplay volumes have no visible geometry. The independent Tripo
+            // models supply the appearance; a tinted primitive hides furniture.
+            spot = new GameObject(objectName);
+            spot.transform.position = position;
+            spot.transform.localScale = scale;
         }
 
-        spot.GetComponent<BoxCollider>().isTrigger = true;
-        HideSpot hideSpot = spot.AddComponent<HideSpot>();
+        // Also repair legacy volumes if a scene already contains one. Changing
+        // only URP's _Surface does not configure transparent blending/render state.
+        Renderer renderer = spot.GetComponent<Renderer>();
+        if (renderer != null)
+            renderer.enabled = false;
+
+        BoxCollider trigger = spot.GetComponent<BoxCollider>();
+        if (trigger == null)
+            trigger = spot.AddComponent<BoxCollider>();
+        trigger.isTrigger = true;
+        HideSpot hideSpot = spot.GetComponent<HideSpot>();
+        if (hideSpot == null)
+            hideSpot = spot.AddComponent<HideSpot>();
         hideSpot.Configure(displayName);
     }
 
@@ -431,30 +571,4 @@ public sealed class GameBootstrap : MonoBehaviour
             renderer.material.color = color;
     }
 
-    private void OnGUI()
-    {
-        if (!GameFlowUI.GameplayInputEnabled)
-            return;
-
-        Matrix4x4 previousMatrix = GUI.matrix;
-        float uiScale = Mathf.Clamp(Screen.height / 1080f, 1f, 2f);
-        GUI.matrix = Matrix4x4.Scale(new Vector3(uiScale, uiScale, 1f));
-        float logicalWidth = Screen.width / uiScale;
-        float logicalHeight = Screen.height / uiScale;
-        titleStyle ??= new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 34,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleLeft,
-            normal = { textColor = Color.white }
-        };
-        scoreStyle ??= new GUIStyle(titleStyle) { fontSize = 23 };
-        toastStyle ??= new GUIStyle(titleStyle) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
-
-        GUI.Label(new Rect(36f, 30f, 500f, 48f), "CATASTROPHE!", titleStyle);
-        int score = GameManager.I != null ? GameManager.I.chaosScore : 0;
-        GUI.Label(new Rect(36f, 76f, 420f, 38f), $"CHAOS SCORE  {score}", scoreStyle);
-        GUI.Label(new Rect(0f, logicalHeight - 132f, logicalWidth, 38f), toast, toastStyle);
-        GUI.matrix = previousMatrix;
-    }
 }

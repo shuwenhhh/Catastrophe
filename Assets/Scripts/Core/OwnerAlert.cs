@@ -1,126 +1,106 @@
-using System.Collections;
+using System;
 using UnityEngine;
 
+// One state machine owns the noise-triggered warning and the owner's visit.
 public sealed class OwnerAlert : MonoBehaviour
 {
-    public float countdown = 5f;
+    public enum Phase { Idle, HidingCountdown, Inspecting }
+    public static OwnerAlert I { get; private set; }
+    public const float WarningDuration = 5f;
+    public const float InspectionDuration = 3f;
+    public const float PatrolInterval = WarningDuration; // Compatibility, no periodic patrol.
+    public Phase CurrentPhase { get; private set; }
+    public bool IsInspecting => CurrentPhase == Phase.Inspecting;
+    public bool IsWarning => CurrentPhase == Phase.HidingCountdown;
+    public bool IsRunning { get; private set; }
+    public float SecondsRemaining { get; private set; }
+    public float CountdownRemaining => IsWarning ? SecondsRemaining : 0f;
+    public int InspectionFrame => IsInspecting
+        ? Mathf.Clamp(Mathf.FloorToInt(InspectionDuration - SecondsRemaining), 0, 2) : -1;
+    public event Action<bool> OnInspectionChanged;
+    NoiseManager observedNoise;
+    int lastTick;
 
-    private NoiseManager noiseManager;
-    private Coroutine alertRoutine;
-    private float secondsRemaining;
-    private GUIStyle warningStyle;
-    private GUIStyle countdownStyle;
-    private GUIStyle failureStyle;
-
-    private void Start()
+    void Awake()
     {
-        BindNoiseManager();
+        if (I && I != this) { Destroy(this); return; }
+        I = this;
     }
-
-    private void OnEnable()
+    void OnEnable() => BindNoise();
+    void BindNoise()
     {
-        BindNoiseManager();
+        if (observedNoise == NoiseManager.I) return;
+        if (observedNoise) observedNoise.OnThresholdExceeded -= TriggerAlert;
+        observedNoise = NoiseManager.I;
+        if (observedNoise) observedNoise.OnThresholdExceeded += TriggerAlert;
     }
-
-    private void OnDisable()
+    void OnDisable()
     {
-        UnbindNoiseManager();
-        if (alertRoutine != null)
-        {
-            StopCoroutine(alertRoutine);
-            alertRoutine = null;
-        }
+        if (observedNoise) observedNoise.OnThresholdExceeded -= TriggerAlert;
+        observedNoise = null;
+        AudioManager.I?.SetInspectionMix(false);
     }
-
-    private void BindNoiseManager()
+    void OnDestroy() { if (I == this) I = null; }
+    public void BeginRun()
     {
-        NoiseManager manager = NoiseManager.I != null
-            ? NoiseManager.I
-            : FindAnyObjectByType<NoiseManager>();
-        if (manager == noiseManager)
-            return;
-
-        UnbindNoiseManager();
-        noiseManager = manager;
-        if (noiseManager != null)
-            noiseManager.OnThresholdExceeded += TriggerAlert;
+        IsRunning = true;
+        SetPhase(Phase.Idle, 0f);
+        NoiseManager.I?.ResetNoise();
     }
-
-    private void UnbindNoiseManager()
+    public void RestoreState(Phase phase, float remaining)
     {
-        if (noiseManager != null)
-            noiseManager.OnThresholdExceeded -= TriggerAlert;
-        noiseManager = null;
+        IsRunning = true;
+        if (!Enum.IsDefined(typeof(Phase), phase)) phase = Phase.Idle;
+        if (phase == Phase.Idle && NoiseManager.I && NoiseManager.I.noise >= 100f)
+        { phase = Phase.HidingCountdown; remaining = WarningDuration; }
+        float duration = phase == Phase.Inspecting ? InspectionDuration : phase == Phase.HidingCountdown ? WarningDuration : 0f;
+        if (float.IsNaN(remaining) || float.IsInfinity(remaining)) remaining = duration;
+        SetPhase(phase, Mathf.Clamp(remaining, 0f, duration));
     }
+    public void RestoreCycle(bool inspecting, float remaining) =>
+        RestoreState(inspecting ? Phase.Inspecting : Phase.HidingCountdown, remaining);
+    public static float DestructionPenalty(float noise) => 0f;
 
     public void TriggerAlert()
     {
-        if (alertRoutine == null)
+        if (!IsRunning || CurrentPhase != Phase.Idle || !GameFlowUI.GameplayInputEnabled) return;
+        SetPhase(Phase.HidingCountdown, WarningDuration);
+        Tick();
+    }
+    void SetPhase(Phase phase, float seconds)
+    {
+        bool wasInspecting = IsInspecting;
+        CurrentPhase = phase;
+        SecondsRemaining = seconds;
+        lastTick = -1;
+        AudioManager.I?.SetInspectionMix(IsInspecting);
+        if (wasInspecting != IsInspecting) OnInspectionChanged?.Invoke(IsInspecting);
+    }
+    void Tick()
+    {
+        int second = Mathf.CeilToInt(SecondsRemaining);
+        if (second > 0 && second != lastTick)
+        { lastTick = second; AudioManager.I?.PlayCountdownTick(); }
+    }
+    void Update()
+    {
+        BindNoise();
+        if (!IsRunning || !GameFlowUI.GameplayInputEnabled || CurrentPhase == Phase.Idle) return;
+        SecondsRemaining = Mathf.Max(0f, SecondsRemaining - Time.deltaTime);
+        if (IsWarning)
         {
-            AudioManager.I?.PlayOwnerAlert();
-            alertRoutine = StartCoroutine(AlertCountdown());
+            if (SecondsRemaining <= 0f) SetPhase(Phase.Inspecting, InspectionDuration);
+            else Tick();
         }
     }
-
-    private IEnumerator AlertCountdown()
+    void LateUpdate()
     {
-        secondsRemaining = Mathf.Max(0f, countdown);
-        while (secondsRemaining > 0f)
-        {
-            secondsRemaining = Mathf.Max(0f, secondsRemaining - Time.deltaTime);
-            yield return null;
-        }
-
-        CatController cat = FindAnyObjectByType<CatController>();
-        if (cat != null && cat.IsHidden)
-        {
-            // Resetting to zero crosses below the threshold, so the very next
-            // accumulation can trigger another alert. There is no cooldown.
-            noiseManager?.ResetNoise();
-            AudioManager.I?.PlayHideSuccess();
-            alertRoutine = null;
-            yield break;
-        }
-
-        alertRoutine = null;
-        GameManager.I?.OnCaught();
-    }
-
-    private void OnGUI()
-    {
-        if (!GameFlowUI.GameplayInputEnabled)
-            return;
-
-        float uiScale = Mathf.Clamp(Screen.height / 1080f, 1f, 2f);
-        Matrix4x4 previousMatrix = GUI.matrix;
-        GUI.matrix = Matrix4x4.Scale(new Vector3(uiScale, uiScale, 1f));
-        float logicalWidth = Screen.width / uiScale;
-        float logicalHeight = Screen.height / uiScale;
-
-        warningStyle ??= new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 38,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = new Color(1f, 0.28f, 0.20f) }
-        };
-        countdownStyle ??= new GUIStyle(warningStyle)
-        {
-            fontSize = 30,
-            normal = { textColor = Color.white }
-        };
-
-        if (alertRoutine == null)
-        {
-            GUI.matrix = previousMatrix;
-            return;
-        }
-
-        GUI.Box(new Rect(logicalWidth * 0.5f - 260f, logicalHeight * 0.5f - 80f, 520f, 160f), GUIContent.none);
-        GUI.Label(new Rect(0f, logicalHeight * 0.5f - 62f, logicalWidth, 58f),
-            "主人正在找你！", warningStyle);
-        GUI.Label(new Rect(0f, logicalHeight * 0.5f + 4f, logicalWidth, 48f),
-            $"{Mathf.CeilToInt(secondsRemaining)}", countdownStyle);
-        GUI.matrix = previousMatrix;
+        if (!IsRunning || !IsInspecting || SecondsRemaining > 0f || !GameFlowUI.GameplayInputEnabled) return;
+        var cat = FindAnyObjectByType<CatController>();
+        bool caught = cat && !RoomHiding.IsConcealed(cat);
+        SetPhase(Phase.Idle, 0f);
+        IsRunning = !caught;
+        if (caught) GameManager.I?.OnCaught();
+        else NoiseManager.I?.ResetNoise();
     }
 }

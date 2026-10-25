@@ -119,3 +119,9 @@ InitTestScene*.unity*
 /Validation/VideoAudit-*/frames/
 /Validation/VideoAudit-*/*.jpg
 /Validation/VideoAudit-*/*.png
+
+# Local visual QA output and recoverable editor backups are not runtime assets.
+/Validation/*
+!/Validation/Batches/
+/ProjectBackups/
+/Assets/Resources/.DS_Store
